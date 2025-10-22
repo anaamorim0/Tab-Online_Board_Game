@@ -24,8 +24,22 @@
                 </button>
 
                 
+                <div id="loginMenu" class="login-menu hidden">
+                    <form id="loginForm" class="login-form">
+                     
+                        <div class="username-form">
+                            <input type="text" id="username" name="username" placeholder="Username" required>
+                        </div>
+                        
+                        <div class="pass-form">
+                            <input type="password" id="password" name="password" placeholder="Password" required>
+                        </div> 
 
-                <div id="loginMenu" class="login-menu hidden"></div>
+                        <button type="submit" id="buttonEntrar" class="button-entrar" disabled>
+                            Entrar
+                        </button>
+                    </form>
+                </div>
 
                 <button id="settingsButton" class="settings-button" title="Configurações">
                     <img src="settings_logo.png" alt="Settings Logo" id="settingsLogo" class="settings-logo">

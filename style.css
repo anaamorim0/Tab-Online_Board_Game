@@ -56,6 +56,7 @@ html, body {
     height: auto;
     max-width: 650px;
     min-width:430px;
+    font-size: 1.7vw;
     z-index: 10;
 }
 
@@ -117,17 +118,99 @@ html, body {
 /* Login Menu */
 .login-menu {
     position: absolute;
-    top: 29%;
+    top: 19%;
     left: 67%;
     transform: translate(-50%, -50%);
     width: 30%;
-    height: 37%;
+    height: 18%;
     background-color: #230a07;
     opacity: 0.8;
     border-radius: 8px;
     z-index: 1000;
 }
 
+
+/* Login */
+.username-form input {
+    position: absolute;
+    top: 7%;
+    left: 13%;
+    width: 70%;
+    height: 18%;
+    border: 1px solid #230a07;
+    border-radius: 5px;
+    background-color: #fff;
+    margin-top: 8px;
+}
+
+.username-form input::placeholder {
+    color: #a59b8f;
+    font-style: normal;
+    font-size: 10px;
+}
+
+
+.pass-form input{
+    position: absolute;
+    top: 35%;
+    left: 13%;
+    width: 70%;
+    height: 18%;
+    border: 1px solid #230a07;
+    border-radius: 5px;
+    background-color: #fff;
+    margin-top: 8px;
+}
+
+.pass-form input::placeholder {
+    color: #a59b8f;
+    font-style: normal;
+    font-size: 10px;
+}
+
+.button-entrar {
+    position: absolute;
+    top: 62%;
+    left: 19%;
+    width: 70%;
+    height: 18%;
+    border-radius: 8px;
+    background-color: #ece5da; 
+    color: #b8b1a6; 
+    font-size: 0.7rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: not-allowed;     
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.button-entrar:disabled {
+    background-color: #cda76c;
+    color: #230a07;
+}
+
+.button-entrar:hover {
+    transform: translateY(-1px);
+}
+
+/* Botão centrado */
+.login-form button {
+    align-self: center;
+    margin-top: 10px;
+    width: 60%;
+    padding: 8px;
+    background-color: #8b4513;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.login-form button:hover {
+    background-color: #a0522d;
+}
 
 /* Setting Button */
 .settings-button {
