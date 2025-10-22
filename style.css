@@ -1,0 +1,220 @@
+html, body { 
+    height: 100%;
+    display: flex;
+    margin: 0;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    background-color: #230a07;
+}
+
+.container {
+    position: relative;
+    width: 1200px;
+    height: 780px;
+}
+
+
+/* Caixa fechada */
+.wood-box {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 82%;
+    max-width: 970px;
+    height: auto;
+    margin-top: 0;
+    filter: drop-shadow(0 14px 18px rgba(0, 0, 0, 0.5));
+    cursor: pointer;
+}
+
+.wood-box:hover { 
+    margin-top: -6px;
+    transition: margin-top 0.3s ease, filter 0.3s ease;
+}
+
+
+/* Logo */
+.logo {
+    position: fixed;
+    top: 30px;
+    left: 30px;
+    width: 12%;
+    height: auto;
+    display: block;
+}
+
+
+/* Caixa Aberta */
+.box-open-wrap {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60%;
+    height: auto;
+    max-width: 650px;
+    min-width:430px;
+    z-index: 10;
+}
+
+.wood-box-open {
+    width: 100%;
+    height: auto;
+    display: block;
+    z-index: 0;
+}
+
+
+/* User Button */
+.user-button {
+    position: absolute;
+    top: 10%;
+    right: 7.5%;
+    width: 9%;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: block;
+}
+
+.user-button img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.user-button:hover img { 
+    transform: scale(1.05); 
+}
+
+/* User Button 2 */
+.user-button2 {
+    position: absolute;
+    top: 10%;
+    right: 7.5%;
+    width: 9%;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: block;
+}
+
+.user-button2 img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.user-button2:hover img { 
+    transform: scale(1.05); 
+}
+
+
+/* Login Menu */
+.login-menu {
+    position: absolute;
+    top: 29%;
+    left: 67%;
+    transform: translate(-50%, -50%);
+    width: 30%;
+    height: 37%;
+    background-color: #230a07;
+    opacity: 0.8;
+    border-radius: 8px;
+    z-index: 1000;
+}
+
+
+/* Setting Button */
+.settings-button {
+    position: absolute;
+    top: 20%;
+    right: 8%;
+    width: 8%;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: block;
+}
+
+.settings-button img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.settings-button:hover img { 
+    transform: scale(1.05); 
+}
+
+
+/* Settings Button 2*/
+.settings-button2{
+    position: absolute;
+    top: 20%;
+    right: 8%;
+    width: 8%;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: block;
+}
+
+.settings-button2 img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.settings-button2:hover img { 
+    transform: scale(1.05); 
+}
+
+/* Settings Menu */
+.settings-menu {
+    position: absolute;
+    top: 29%;
+    left: 67%;
+    transform: translate(-50%, -50%);
+    width: 30%;
+    height: 37%;
+    background-color: #230a07;
+    opacity: 0.8;
+    border-radius: 8px;
+    z-index: 1000;
+}
+
+
+/* Tabuleiro */
+.tabuleiro {
+    position: absolute;
+    left: 51%;
+    top: 73%;
+    transform: translate(-50%, -50%);
+    display: grid;
+    grid-template-columns: repeat(var(--cols), 1fr);
+    grid-template-rows:    repeat(var(--rows), 1fr);
+    width: 80%;             
+    height: 32%;
+    background: #66280e;
+    border: 10px solid #66280e;
+    border-radius: 20px;
+    box-sizing: border-box;
+}
+
+.tabuleiro div{
+    border: 1.4px solid #66280e;
+    background: linear-gradient(45deg, #d2b48c, #b8905a);
+    border-radius: 8px;
+}
+
+/* Esconder */
+.hidden { 
+    display: none; 
+}
