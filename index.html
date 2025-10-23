@@ -8,47 +8,44 @@
 
     <body> 
         <div class="container"> 
-            <img src="Tab_WoodBox.png" alt="Wood Box Closed" id="closedBox" class="wood-box">
+            <!-- Caixa Fechada -->
+            <img src="Tab_WoodBox.png" alt="Wood Box Closed" id="closedBox" class="wood-box" title="Clique para abrir o jogo">
+
+            <!-- Logotipo -->
             <img src="Tab_WoodBox_Logo.png" alt="Logo" class="logo hidden" id="logo">
 
+            <!-- Caixa Aberta -->
             <div id="openWrap" class="box-open-wrap hidden">    
                 <img src="Tab_WoodBox_Open.png" alt="Wood Box Open" id="openBox" class="wood-box-open">
 
+                <!-- Botão Login -->
                 <button id="userButton" class="user-button" title="Login">
                     <img src="user_logo.png" alt="User Logo" id="userLogo" class="user-logo">
                 </button>
 
-                <button id="userButton2" class="user-button2 hidden" title="Login">
-                    <img src="user_logo_2.png" alt="User Logo 2" id="userLogo2" class="user-logo2">
-                </button>
-
-                
+                 <!-- Menu Login -->
                 <div id="loginMenu" class="login-menu hidden">
                     <form id="loginForm" class="login-form">
-                     
                         <div class="username-form">
                             <input type="text" id="username" name="username" placeholder="Username" required>
                         </div>
-                        
                         <div class="pass-form">
                             <input type="password" id="password" name="password" placeholder="Password" required>
-                        </div> 
-
+                        </div>
                         <button type="submit" id="buttonEntrar" class="button-entrar" disabled>
                             Entrar
                         </button>
                     </form>
                 </div>
 
+                <!-- Botão Configurações -->
                 <button id="settingsButton" class="settings-button" title="Configurações">
                     <img src="settings_logo.png" alt="Settings Logo" id="settingsLogo" class="settings-logo">
                 </button>
 
-                <button id="settingsButton2" class="settings-button2 hidden" title="Configurações">
-                    <img src="settings_logo_2.png" alt="Settings Logo 2" id="settingsLogo2" class="settings-logo2">
-                </button>
-
+                <!-- Menu Configurações -->
                 <div id="settingsMenu" class="settings-menu hidden">
+
                     <p id="sizeText" class="size-text">Selecione o tamanho do tabuleiro</p>
                     <select size=1 name="size" class="size">
                         <option>7</option>
@@ -73,34 +70,240 @@
 
                 </div>
 
+
+                <!-- Botão Classificações -->
+                <button id="classButton" class="class-button" title="Classificações">
+                    <img src="classificacoes_logo.png" alt="Classificações Logo" id="classLogo" class="class-logo">
+                </button>
+
+                <!-- Menu Classificações -->
+                <div id="classMenu" class="class-menu hidden"></div>
+            
+
+                <!-- Botão Regras -->
                 <button id="regrasButton" class="regras-button" title="Regras">
                     <img src="regras_logo.png" alt="Regras Logo" id="regrasLogo" class="regras-logo">
                 </button>
 
-                <!--
-                <button id="regrasButton2" class="regras-button2" title="Regras">
-                    <img src="regras_logo_2.png" alt="Regras Logo 2" id="regrasLogo2" class="regras-logo2">
-                </button>
-                -->
+                <!-- Menu Regras -->
+                <div id="regrasMenu" class="regras-menu hidden">
+                    <h3 class="titulo-regras">Regras</h3>
 
+                    <div id="regrasContent" class="texto-regras" tabindex="0">
+
+                        <section class="regras">
+                            <button class="regras-head" aria-expanded="false" aria-controls="regra-1">
+                                Tabuleiro e Dimensões
+                            </button>
+                            <div id="regra-1" class="regras-body" hidden>
+                                <ul>
+                                <li><strong>Tâb</strong> é um jogo de tabuleiro para dois jogadores.</li>
+                                <li>O tabuleiro tem <strong>4 linhas</strong>.</li>
+                                <li>O número de colunas é <strong>ímpar</strong>, entre <strong>7</strong> e <strong>15</strong> (tipicamente <strong>9</strong>).</li>
+                                </ul>
+                            </div>
+                        </section>
+
+                        <section class="regras">
+                            <button class="regras-head" aria-expanded="false" aria-controls="regra-2">
+                                Peças
+                            </button>
+                            <div id="regra-2" class="regras-body" hidden>
+                                <ul>
+                                <li>Cada jogador tem <em>n</em> peças (igual ao número de colunas).</li>
+                                <li>O jogador usa uma cor distinta do adversário.</li>
+                                </ul>
+                            </div>
+                        </section>
+
+                        <section class="regras">
+                            <button class="regras-head" aria-expanded="false" aria-controls="regra-3">
+                                Número e posição inicial
+                            </button>
+                            <div id="regra-3" class="regras-body" hidden>
+                                <ul>
+                                <li>As peças começam alinhadas na <strong>fila inicial</strong> de cada jogador.</li>
+                                </ul>
+                            </div>
+                        </section>
+
+                        <section class="regras">
+                            <button class="regras-head" aria-expanded="false" aria-controls="regra-4">
+                                Perspetiva de cada jogador
+                            </button>
+                            <div id="regra-4" class="regras-body" hidden>
+                                <ul>
+                                <li>As peças do jogador são mostradas em baixo.</li>
+                                <li>Para o adversário, o mesmo tabuleiro está rodado 180°.</li>
+                                </ul>
+                            </div>
+                        </section>
+
+                        <section class="regras">
+                            <button class="regras-head" aria-expanded="false" aria-controls="regra-5">
+                                Estado das peças
+                            </button>
+                            <div id="regra-5" class="regras-body" hidden>
+                                <ul>
+                                <li>O jogo considera o estado de cada peça:
+                                    <ul>
+                                    <li>ainda não foi movida;</li>
+                                    <li>já foi movida mas não chegou à última fila;</li>
+                                    <li>já esteve na última fila (4.ª).</li>
+                                    </ul>
+                                </li>
+                                </ul>
+                            </div>
+                        </section>
+
+                        <section class="regras">
+                            <button class="regras-head" aria-expanded="false" aria-controls="regra-6">
+                                Lançamento (dado de paus)
+                            </button>
+                            <div id="regra-6" class="regras-body" hidden>
+                                <ul>
+                                <li>Em vez de dado tradicional, usam-se <strong>4 paus</strong> com duas faces (clara/escura).</li>
+                                <li>Para lançar os dados, basta carregar no botão <strong>“Lançar Dados”</strong>.</li>
+                                <li>Conta-se quantos ficam com o <strong>lado claro</strong>: esse número é a <strong>soma</strong> (0–4).</li>
+                                </ul>
+                            </div>
+                        </section>
+
+                        <section class="regras">
+                            <button class="regras-head" aria-expanded="false" aria-controls="regra-7">
+                                Valores e repetição
+                            </button>
+                            <div id="regra-7" class="regras-body" hidden>
+                                <p>A cada soma corresponde um <strong>valor de deslocamento</strong> e a possibilidade (ou não) de repetir:</p>
+                                <table class="regras-table">
+                                <thead>
+                                    <tr><th>Soma</th><th>Valor</th><th>Nome</th><th>Repete?</th><th>Prob.</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>0</td><td>6</td><td>Sitteh</td><td>Sim</td><td>≈ 6%</td></tr>
+                                    <tr><td>1</td><td>1</td><td>Tâb</td><td>Sim</td><td>≈ 25%</td></tr>
+                                    <tr><td>2</td><td>2</td><td>Itneyn</td><td>Não</td><td>≈ 38%</td></tr>
+                                    <tr><td>3</td><td>3</td><td>Teláteh</td><td>Não</td><td>≈ 25%</td></tr>
+                                    <tr><td>4</td><td>4</td><td>Arba'ah</td><td>Sim</td><td>≈ 6%</td></tr>
+                                </tbody>
+                                </table>
+                            </div>
+                        </section>
+
+                        <section class="regras">
+                            <button class="regras-head" aria-expanded="false" aria-controls="regra-8">
+                                Início de movimento
+                            </button>
+                            <div id="regra-8" class="regras-body" hidden>
+                                <ul>
+                                <li>Antes de mover uma peça é necessário lançar o dado.</li>
+                                <li>A primeira vez que uma peça se move tem de ser com <strong>1 (Tâb)</strong>.</li>
+                                <li>Se o valor não for 1 mas <strong>4</strong> ou <strong>6</strong>, repete-se o lançamento.</li>
+                                <li>A casa de destino não pode ter peças da tua cor — por isso começam a mexer as peças mais à <strong>direita</strong>.</li>
+                                </ul>
+                            </div>
+                        </section>
+
+                        <section class="regras">
+                            <button class="regras-head" aria-expanded="false" aria-controls="regra-9">
+                                Progressão no tabuleiro
+                            </button>
+                            <div id="regra-9" class="regras-body" hidden>
+                                <ul>
+                                <li>As peças movem-se:
+                                    <ul>
+                                    <li>da <strong>esquerda para a direita</strong> na 1.ª e 3.ª filas;</li>
+                                    <li>da <strong>direita para a esquerda</strong> na 2.ª e 4.ª filas.</li>
+                                    </ul>
+                                </li>
+                                <li>Transições entre filas:
+                                    <ul>
+                                    <li>1.ª → 2.ª → 3.ª;</li>
+                                    <li>3.ª → 4.ª <em>ou</em> 2.ª;</li>
+                                    <li>4.ª → 3.ª.</li>
+                                    </ul>
+                                </li>
+                                </ul>
+                            </div>
+                        </section>
+
+                        <section class="regras">
+                            <button class="regras-head" aria-expanded="false" aria-controls="regra-10">
+                                Restrições de movimento
+                            </button>
+                            <div id="regra-10" class="regras-body" hidden>
+                                <ul>
+                                <li><strong>Uma peça por casa</strong> (sem empilhar).</li>
+                                <li>Cada peça só pode entrar <strong>uma vez</strong> na <strong>4.ª fila</strong> (a de cima).</li>
+                                <li>Uma peça só se pode mover na 4.ª fila se <strong>não houver peças</strong> da sua cor na <strong>fila inicial</strong> (a de baixo).</li>
+                                <li>Uma peça <strong>não pode regressar</strong> à fila inicial do jogador.</li>
+                                </ul>
+                            </div>
+                        </section>
+
+                        <section class="regras">
+                            <button class="regras-head" aria-expanded="false" aria-controls="regra-11">
+                                Passar a vez
+                            </button>
+                            <div id="regra-11" class="regras-body" hidden>
+                                <ul>
+                                <li>Se o valor do dado não permitir jogada válida <strong>e</strong> não der direito a novo lançamento, tens de <strong>passar a vez</strong>.</li>
+                                <li>Não podes passar a vez se existir uma jogada válida ou a possibilidade de lançar novamente.</li>
+                                </ul>
+                            </div>
+                        </section>
+
+                        <section class="regras">
+                            <button class="regras-head" aria-expanded="false" aria-controls="regra-12">
+                                Capturas
+                            </button>
+                            <div id="regra-12" class="regras-body" hidden>
+                                <ul>
+                                <li>Se a casa de destino tiver peça do adversário, essa peça é <strong>capturada</strong> e <strong>retirada</strong> do tabuleiro.</li>
+                                </ul>
+                            </div>
+                        </section>
+
+                        <section class="regras">
+                            <button class="regras-head" aria-expanded="false" aria-controls="regra-13">
+                                Fim do jogo
+                            </button>
+                            <div id="regra-13" class="regras-body" hidden>
+                                <ul>
+                                <li>O jogo termina quando um jogador <strong>fica sem peças</strong>.</li>
+                                <li>Ganha quem ainda tiver peças no tabuleiro.</li>
+                                </ul>
+                            </div>
+                        </section>
+
+                    </div>
+                </div>
+
+                
+
+                <!-- Botão Jogador vs Jogador -->
                 <button id="jogador" class="jogador">
                     <img src="jogadorVSjogador.png" alt="Jogador vs Jogador" id="jogadorVSjogador" class="jogador-vs-jogador">
                     Jogador vs Jogador
                 </button>
 
+                <!-- Botão Jogador vs IA -->
                 <button id="ia" class="IA">
                     <img src="jogadorVSia.png" alt="Jogador vs Ia" id="jogadorVSia" class="jogador-vs-ia">
                     Jogador vs IA
                 </button>
 
+                <!-- Jogador vs Jogador -->
                 <h2 id="jogadorText" class="jogador-text hidden">
                     Jogador vs Jogador
                 </h2>
 
+                <!-- Jogador vs IA-->
                 <h2 id="iaText" class="ia-text hidden">
                     Jogador vs IA
                 </h2>
 
+                <!-- Dados -->
                 <div id="dadosWrap" class="dados-wrap hidden">
                     <div class="dados-grid" id="dadosGrid">
                         <div class="dado" data-idx="0">
@@ -119,6 +322,7 @@
                 </div>
 
 
+                <!-- Tabuleiro -->
                 <div class="tabuleiro" style="--cols: 10; --rows: 4;">
                     <div></div><div></div><div></div><div></div><div></div><div></div>
                     <div></div><div></div><div></div><div></div><div></div><div></div>

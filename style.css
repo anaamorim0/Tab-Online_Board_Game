@@ -94,29 +94,6 @@ html, body {
     transform: scale(1.05); 
 }
 
-/* User Button 2 */
-.user-button2 {
-    position: absolute;
-    top: 10%;
-    right: 7.5%;
-    width: 9%;
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-    display: block;
-}
-
-.user-button2 img {
-    width: 100%;
-    height: auto;
-    display: block;
-}
-
-.user-button2:hover img { 
-    transform: scale(1.05); 
-}
-
 
 /*-------------------------------------------*/
 /* Login Menu */
@@ -203,7 +180,7 @@ html, body {
 .settings-button {
     position: absolute;
     top: 20%;
-    right: 8%;
+    right: 7.5%;
     width: 8%;
     background: none;
     border: none;
@@ -223,28 +200,6 @@ html, body {
 }
 
 
-/* Settings Button 2*/
-.settings-button2{
-    position: absolute;
-    top: 20%;
-    right: 8%;
-    width: 8%;
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-    display: block;
-}
-
-.settings-button2 img {
-    width: 100%;
-    height: auto;
-    display: block;
-}
-
-.settings-button2:hover img { 
-    transform: scale(1.05); 
-}
 
 
 /*-------------------------------------------*/
@@ -356,8 +311,8 @@ html, body {
 /* Regras Button */
 .regras-button {
     position: absolute;
-    top: 40%;
-    right: 10%;
+    top: 42%;
+    right: 9%;
     width: 5%;
     background: none;
     border: none;
@@ -377,12 +332,146 @@ html, body {
 }
 
 
-/* Regras Button 2*/
-.regras-button2{
+/*----------------------------------------------*/
+/* Regras Menu */
+.regras-menu {
     position: absolute;
-    top: 29%;
-    right: 8%;
-    width: 8%;
+    top: 50%;
+    left: 98%;              
+    transform: translateY(-50%);
+    width: 40%;
+    height: 72%;
+    background: rgba(255,255,255,.92);
+    border-radius: 12px;
+    box-shadow: 0 10px 26px rgba(0,0,0,.18);
+    z-index: 1010;
+    display: flex;
+    flex-direction: column;
+    padding: 1.2vh 1.4vh;  
+    overflow: hidden;  
+}
+
+.titulo-regras {
+    margin: 0;
+    padding: 2vh 1vh 2vh 1vh;
+    font-weight: 700;
+    font-size: 4vh;
+}
+
+.regras-head {
+    all: unset;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 1.2vh 1.8vh;     
+    background: #e6b97e;
+    color: #2a1b10;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 2vh;
+    transition: .15s ease, transform .08s ease;
+    border-radius: 10px; 
+}
+
+.regras-head:hover { 
+    background: #ddb16f; 
+}
+
+.regras-head:active { 
+    transform: translateY(1px); 
+}
+
+.regras-head::after {
+    content: "▶";
+}
+
+.regras-head[aria-expanded="true"]::after { 
+    transform: rotate(90deg); 
+}
+
+.regras {  
+    width: 100%;
+    margin: 0.8vh 0;
+    border: none;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #faf8f4;
+    box-shadow: 0 1px 0 rgba(0,0,0,.04) inset;
+}
+
+.regras-body {
+    padding: 0.8vh 0.8vh 0.8vh 0.8vh ; 
+    font-size: 2.3vh;
+    line-height: 1.5;
+    background: #fff8ec;
+    border-radius: 0 0 10px 10px;
+}
+
+.texto-regras {
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 2vh;
+    scrollbar-width: thin;           
+    scrollbar-color: #cda76c #efe9dd;
+    text-align: justify;
+}
+
+.texto-regras::-webkit-scrollbar { 
+    width: 10px; 
+}
+
+.texto-regras::-webkit-scrollbar-track {
+    background: #efe9dd;
+    border-radius: 10px;
+    margin-block: 6px;                   
+}
+
+.texto-regras::-webkit-scrollbar-thumb {
+    background: #cda76c;
+    border-radius: 10px;
+    border: 2px solid #efe9dd;
+}
+
+.texto-regras::-webkit-scrollbar-thumb:hover { 
+    background: #b99157; 
+}
+
+.regras-body ul {
+    margin: 0;
+    padding-left: 1vh;   
+    padding-right: 1vh;     
+    list-style-position: inside;
+}
+
+.regras-table {
+    width: 100%;
+    font-size: 1.7vh;
+    border-collapse: collapse;
+    table-layout: fixed;
+    margin: 0;
+}
+
+.regras-table th, .regras-table td {       
+    padding: 0.5vh 0.5vh;
+    border: 1px solid #e0d7c8;
+    text-align: center;
+    white-space: nowrap;
+}
+.regras-table th {
+    background: #efe9dd;
+    font-weight: 700;
+}
+
+
+/*----------------------------------------------*/
+/* Classificações Button*/
+.class-button {
+    position: absolute;
+    top: 36%;
+    right: 9%;
+    width: 5%;
     background: none;
     border: none;
     padding: 0;
@@ -390,15 +479,16 @@ html, body {
     display: block;
 }
 
-.regras-button2 img {
+.class-button img {
     width: 100%;
     height: auto;
     display: block;
 }
 
-.regras-button2:hover img { 
+.class-button:hover img { 
     transform: scale(1.05); 
 }
+
 
 /*----------------------------------------------*/
 /* Jogador vs Jogador Botão */
