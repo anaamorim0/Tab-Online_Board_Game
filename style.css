@@ -14,7 +14,7 @@ html, body {
     height: 780px;
 }
 
-
+/*-------------------------------------------*/
 /* Caixa fechada */
 .wood-box {
     position: absolute;
@@ -35,6 +35,7 @@ html, body {
 }
 
 
+/*-------------------------------------------*/
 /* Logo */
 .logo {
     position: fixed;
@@ -46,6 +47,7 @@ html, body {
 }
 
 
+/*-------------------------------------------*/
 /* Caixa Aberta */
 .box-open-wrap {
     position: absolute;
@@ -68,6 +70,7 @@ html, body {
 }
 
 
+/*-------------------------------------------*/
 /* User Button */
 .user-button {
     position: absolute;
@@ -115,6 +118,7 @@ html, body {
 }
 
 
+/*-------------------------------------------*/
 /* Login Menu */
 .login-menu {
     position: absolute;
@@ -124,12 +128,12 @@ html, body {
     width: 30%;
     height: 18%;
     background-color: #230a07;
-    opacity: 0.8;
-    border-radius: 8px;
-    z-index: 1000;
+    border-radius: 9px;
+    z-index: 1010;
 }
 
 
+/*-------------------------------------------*/
 /* Login */
 .username-form input {
     position: absolute;
@@ -170,48 +174,31 @@ html, body {
 
 .button-entrar {
     position: absolute;
-    top: 62%;
-    left: 19%;
-    width: 70%;
+    top: 73%;
+    left: 25%;
+    width: 50%;
     height: 18%;
     border-radius: 8px;
     background-color: #ece5da; 
-    color: #b8b1a6; 
+    color: #6d6b68; 
     font-size: 0.7rem;
     display: flex;
     justify-content: center;
     align-items: center;
+    font-weight: bold;       
+    border: none;             
     cursor: not-allowed;     
     transition: background-color 0.2s ease, transform 0.2s ease;
 }
 
-.button-entrar:disabled {
-    background-color: #cda76c;
+.button-entrar:hover {
+    background-color: #a0522d;
+    transform: translateY(-1px);
     color: #230a07;
 }
 
-.button-entrar:hover {
-    transform: translateY(-1px);
-}
 
-/* Botão centrado */
-.login-form button {
-    align-self: center;
-    margin-top: 10px;
-    width: 60%;
-    padding: 8px;
-    background-color: #8b4513;
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: bold;
-}
-
-.login-form button:hover {
-    background-color: #a0522d;
-}
-
+/*-------------------------------------------*/
 /* Setting Button */
 .settings-button {
     position: absolute;
@@ -259,6 +246,8 @@ html, body {
     transform: scale(1.05); 
 }
 
+
+/*-------------------------------------------*/
 /* Settings Menu */
 .settings-menu {
     position: absolute;
@@ -268,12 +257,352 @@ html, body {
     width: 30%;
     height: 37%;
     background-color: #230a07;
-    opacity: 0.8;
-    border-radius: 8px;
-    z-index: 1000;
+    border-radius: 9px;
+    z-index: 1010;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding-top: 1vh;
+    padding-bottom: 3vh;
+}
+
+/* Definir tamanho do tabuleiro */
+.size-text {
+    color: #fff;
+    font-size: 1.2vw;
+    margin-bottom: 0.5vh;
+    margin-left: 0.8vh;
+    margin-right: 0.8vh;
+    text-align: center;
+}
+
+.size {
+    font-size: 1.1vw;     
+    padding: 0.5vh 1vw;       
+    border-radius: 0.5vw;
+    border: none;
+    background-color: #fff;
+    color: #230a07;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    width: 40%;      
+    min-width: 80px;     
+    max-width: 150px;   
+}
+
+.size:hover {
+    background-color: #ddd;
+}
+
+/* Definir 1º jogador a jogar */
+.first-player-text {
+    color: #fff;
+    font-size: 1.2vw;
+    margin-bottom: 0.5vh;
+    margin-left: 0.8vh;
+    margin-right: 0.8vh;
+    text-align: center;
+}
+
+.first-player {
+    font-size: 1.1vw;     
+    padding: 0.5vh 1vw;       
+    border-radius: 0.5vw;
+    border: none;
+    background-color: #fff;
+    color: #230a07;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    width: 40%;      
+    min-width: 80px;     
+    max-width: 150px;   
+}
+
+.first-player:hover {
+    background-color: #ddd;
+}
+
+/* Definir o nível de dificuldade da AI */
+.nivelAI-text {
+    color: #fff;
+    font-size: 1.2vw;
+    margin-bottom: 0.5vh;
+    margin-left: 0.8vh;
+    margin-right: 0.8vh;
+    text-align: center;
+}
+
+.nivelAI {
+    font-size: 1.1vw;     
+    padding: 0.5vh 1vw;       
+    border-radius: 0.5vw;
+    border: none;
+    background-color: #fff;
+    color: #230a07;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    width: 40%;      
+    min-width: 80px;     
+    max-width: 150px;   
+}
+
+.nivelAI:hover {
+    background-color: #ddd;
 }
 
 
+/*-------------------------------------------*/
+/* Regras Button */
+.regras-button {
+    position: absolute;
+    top: 40%;
+    right: 10%;
+    width: 5%;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: block;
+}
+
+.regras-button img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.regras-button:hover img { 
+    transform: scale(1.05); 
+}
+
+
+/* Regras Button 2*/
+.regras-button2{
+    position: absolute;
+    top: 29%;
+    right: 8%;
+    width: 8%;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: block;
+}
+
+.regras-button2 img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.regras-button2:hover img { 
+    transform: scale(1.05); 
+}
+
+/*----------------------------------------------*/
+/* Jogador vs Jogador Botão */
+.jogador {
+    position: absolute;
+    top: 20%;
+    left: 40%;
+    width: 25%;
+    height: 7%;
+    border-radius: 10px;
+    background-color: #fff; 
+    color: #230a07; 
+    font-size: 0.8rem;
+    font-weight: bold;
+    border: none;     
+    cursor: pointer;
+    display: flex;
+    align-items: center;     
+    justify-content: center;   
+    gap: 0.6em;          
+    padding: 0.6em 1em;
+    transition:
+        background-color 0.2s ease,
+        transform 0.1s ease,
+        box-shadow 0.2s ease;
+    box-shadow:
+        0 4px 6px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.jogador-vs-jogador {
+    width: 3em;      
+    height: auto;
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,0.25));
+}
+
+.jogador:hover {
+    transform: translateY(-2px);
+    background-color: #954c2ac5;
+    box-shadow:
+        0 6px 10px rgba(0, 0, 0, 0.35)
+}
+
+.jogador:active {
+    transform: translateY(1px);
+    background-color: #a0522d;
+    box-shadow:
+        0 2px 4px rgba(0, 0, 0, 0.25),
+        inset 0 2px 4px rgba(0, 0, 0, 0.25);
+}
+
+
+/*----------------------------------------------*/
+/* Jogador vs IA Botão */
+.IA {
+    position: absolute;
+    top: 30%;
+    left: 40%;
+    width: 25%;
+    height: 7%;
+    border-radius: 10px;
+    background-color: #fff; 
+    color: #230a07; 
+    font-size: 0.8rem;
+    font-weight: bold;
+    border: none;     
+    cursor: pointer;
+    display: flex;
+    align-items: center;     
+    justify-content: center;   
+    gap: 0.6em;          
+    padding: 0.6em 1em;
+    transition:
+        background-color 0.2s ease,
+        transform 0.1s ease,
+        box-shadow 0.2s ease;
+    box-shadow:
+        0 4px 6px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.jogador-vs-ia {
+    width: 3em;   
+    height: auto;
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,0.25));
+}
+
+.IA:hover {
+    transform: translateY(-2px);
+    background-color: #954c2ac5;
+    box-shadow:
+        0 6px 10px rgba(0, 0, 0, 0.35)
+}
+
+.IA:active {
+    transform: translateY(1px);
+    background-color: #a0522d;
+    box-shadow:
+        0 2px 4px rgba(0, 0, 0, 0.25),
+        inset 0 2px 4px rgba(0, 0, 0, 0.25);
+}
+
+
+/*----------------------------------------------*/
+/* Jogador vs Jogador Texto */
+.jogador-text {
+    position: absolute;
+    top: 7%;   
+    left: 35%;
+    transform: translateX(-50%);  
+    font-family: "Georgia", serif;
+    font-size: clamp(1rem, 2.3vw, 2rem); 
+    font-weight: 800;
+    color: #f2e7c8;      
+    text-align: center;
+    text-shadow:
+        0 2px 3px rgba(0, 0, 0, 0.5),
+        0 0 8px rgba(205, 167, 108, 0.4); 
+    letter-spacing: 0.5px;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 10;
+}
+
+.ia-text {
+    position: absolute;
+    top: 7%;   
+    left: 30%;
+    transform: translateX(-50%);  
+    font-family: "Georgia", serif;
+    font-size: clamp(1rem, 2.3vw, 2rem); 
+    font-weight: 800;
+    color: #f2e7c8;      
+    text-align: center;
+    text-shadow:
+        0 2px 3px rgba(0, 0, 0, 0.5),
+        0 0 8px rgba(205, 167, 108, 0.4); 
+    letter-spacing: 0.5px;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 10;
+}
+
+/*----------------------------------------------*/
+/* Dados */
+.dados-wrap {
+    position: absolute;
+    left: 50%;
+    top: 20%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 1001;
+}
+
+.dados-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+
+.dado {
+    width: 70px;
+    height: 90px;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.dado.up {
+  background-color: #230a07;
+}
+
+.dado.down {
+  background-color: #fff;
+}
+
+/* Botão */
+.baralhar-button {
+    margin-top: 10px;
+    padding: 0.7em 1.4em;
+    border-radius: 10px;
+    border: none;
+    background-color: #fff;
+    color: #230a07;
+    font-weight: bold;
+    font-size: 1rem;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    transition: transform 0.1s ease, box-shadow 0.2s ease;
+}
+
+.baralhar-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.35);
+}
+
+.baralhar-button:active {
+    transform: translateY(1px);
+    box-shadow:
+        0 2px 4px rgba(0, 0, 0, 0.25),
+        inset 0 2px 4px rgba(0, 0, 0, 0.25);
+}
+
+
+/*----------------------------------------------*/
 /* Tabuleiro */
 .tabuleiro {
     position: absolute;

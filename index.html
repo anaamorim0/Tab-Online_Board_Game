@@ -4,7 +4,6 @@
         <meta charset="UTF-8">
         <title>Tâb Game</title>
         <link rel="stylesheet" href="style.css" type="text/css">
-        
     </head>
 
     <body> 
@@ -49,7 +48,76 @@
                     <img src="settings_logo_2.png" alt="Settings Logo 2" id="settingsLogo2" class="settings-logo2">
                 </button>
 
-                <div id="settingsMenu" class="settings-menu hidden"></div>
+                <div id="settingsMenu" class="settings-menu hidden">
+                    <p id="sizeText" class="size-text">Selecione o tamanho do tabuleiro</p>
+                    <select size=1 name="size" class="size">
+                        <option>7</option>
+                        <option selected>9</option>
+                        <option>11</option>
+                        <option>13</option>
+                        <option>15</option>
+                    </select>
+
+                    <p id="firstPlayerText" class="first-player-text">Selecione o 1º jogador</p>
+                    <select size=1 name="firstPlayer" class="first-player">
+                        <option selected>Azul</option>
+                        <option>Vermelho</option>
+                    </select>
+
+                    <p id="nivelAIText" class="nivelAI-text">Selecione o nível da IA</p>
+                    <select size=1 name="nivelAI" class="nivelAI">
+                        <option selected>Fácil</option>
+                        <option>Médio</option>
+                        <option>Difícil</option>
+                    </select>
+
+                </div>
+
+                <button id="regrasButton" class="regras-button" title="Regras">
+                    <img src="regras_logo.png" alt="Regras Logo" id="regrasLogo" class="regras-logo">
+                </button>
+
+                <!--
+                <button id="regrasButton2" class="regras-button2" title="Regras">
+                    <img src="regras_logo_2.png" alt="Regras Logo 2" id="regrasLogo2" class="regras-logo2">
+                </button>
+                -->
+
+                <button id="jogador" class="jogador">
+                    <img src="jogadorVSjogador.png" alt="Jogador vs Jogador" id="jogadorVSjogador" class="jogador-vs-jogador">
+                    Jogador vs Jogador
+                </button>
+
+                <button id="ia" class="IA">
+                    <img src="jogadorVSia.png" alt="Jogador vs Ia" id="jogadorVSia" class="jogador-vs-ia">
+                    Jogador vs IA
+                </button>
+
+                <h2 id="jogadorText" class="jogador-text hidden">
+                    Jogador vs Jogador
+                </h2>
+
+                <h2 id="iaText" class="ia-text hidden">
+                    Jogador vs IA
+                </h2>
+
+                <div id="dadosWrap" class="dados-wrap hidden">
+                    <div class="dados-grid" id="dadosGrid">
+                        <div class="dado" data-idx="0">
+                        </div>
+                        <div class="dado" data-idx="1">
+                        </div>
+                        <div class="dado" data-idx="2">
+                        </div>
+                        <div class="dado" data-idx="3">
+                        </div>
+                    </div>
+
+                    <button id="baralharDados" class="baralhar-button">
+                        Lançar Dados
+                    </button>
+                </div>
+
 
                 <div class="tabuleiro" style="--cols: 10; --rows: 4;">
                     <div></div><div></div><div></div><div></div><div></div><div></div>
