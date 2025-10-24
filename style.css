@@ -720,3 +720,37 @@ html, body {
 .hidden { 
     display: none; 
 }
+
+/* ---- Peças (círculos centrados por cima da madeira) ---- */
+
+.tabuleiro div.cell {
+  position: relative;          /* para posicionar a peça dentro */
+  overflow: hidden;
+}
+
+.tabuleiro div.cell .piece {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 44%;                  /* tamanho da peça (ajusta 36–50%) */
+  aspect-ratio: 1 / 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  z-index: 2;                  /* acima do fundo de madeira */
+  pointer-events: none;        /* não bloqueia cliques na célula */
+  box-shadow:
+    inset 0 0 6px rgba(0,0,0,.35),
+    0 1px 2px rgba(0,0,0,.25);
+}
+
+.tabuleiro div.cell .piece.azul {
+  background:
+    radial-gradient(35% 35% at 30% 30%, rgba(255,255,255,.35), transparent 60%),
+    #1e90ff;
+}
+
+.tabuleiro div.cell .piece.vermelha {
+  background:
+    radial-gradient(35% 35% at 30% 30%, rgba(255,255,255,.35), transparent 60%),
+    #d22f2f;
+}
