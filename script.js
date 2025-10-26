@@ -29,22 +29,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
     userButton.addEventListener("click", () => {
         loginMenu.classList.toggle("hidden");
-        loginIcon.src = loginMenu.classList.contains("hidden") ? "user_logo.png" : "user_logo_2.png";
+        loginIcon.src = loginMenu.classList.contains("hidden") ? "img/user_logo.png" : "img/user_logo_2.png";
     });
 
     settingsButton.addEventListener("click", () => {
         settingsMenu.classList.toggle("hidden");
-        settingsIcon.src = settingsMenu.classList.contains("hidden") ? "settings_logo.png" : "settings_logo_2.png";
+        settingsIcon.src = settingsMenu.classList.contains("hidden") ? "img/settings_logo.png" : "img/settings_logo_2.png";
     });
 
     regrasButton.addEventListener("click", () => {
         regrasMenu.classList.toggle("hidden");
-        regrasIcon.src = regrasMenu.classList.contains("hidden") ? "regras_logo.png" : "regras_logo_2.png";
+        regrasIcon.src = regrasMenu.classList.contains("hidden") ? "img/regras_logo.png" : "img/regras_logo_2.png";
     });
 
     classButton.addEventListener("click", () => {
         classMenu.classList.toggle("hidden");
-        classIcon.src = classMenu.classList.contains("hidden") ? "classificacoes_logo.png" : "classificacoes_logo_2.png";
+        classIcon.src = classMenu.classList.contains("hidden") ? "img/classificacoes_logo.png" : "img/classificacoes_logo_2.png";
     });
 
     jogador.addEventListener("click", () => {
