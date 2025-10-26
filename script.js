@@ -135,7 +135,31 @@ document.addEventListener("DOMContentLoaded", () => {
         rows: 4,
         cols: parseInt(document.getElementById("sizeSelect")?.value || "9", 10),
         board: []
+    };    
+    
+    /* === MODO IA === */
+    GameState.vsAI = false;              
+    GameState.aiColorLabel = "Vermelho"; 
+
+    document.getElementById("jogador")?.addEventListener("click", () => {
+        GameState.vsAI = false;
+        GameState.aiColorLabel = "Vermelho";
+    });
+
+    document.getElementById("ia")?.addEventListener("click", () => {
+        GameState.vsAI = true;
+        GameState.aiColorLabel = "Vermelho";
+    });
+
+    /* ==== IA: Delays ==== */
+    const AI_DELAY = {
+    ROLL:   1200, 
+    PICK:   1500,
+    BRANCH: 1500,
+    CHAIN:  1000  
     };
+
+    function defer(fn, ms){ setTimeout(fn, ms); }
 
     /* ===== Perspetiva (NOVO) ===== */
     function toView(r, c, player) {
@@ -146,6 +170,14 @@ document.addEventListener("DOMContentLoaded", () => {
         if (player === "Azul") return { r: vr, c: vc };
         return { r: GameState.rows - 1 - vr, c: GameState.cols - 1 - vc };
     }
+
+    // não roda o tabuleiro quando é a vez do AI
+    function getPerspectivePlayer(){
+        if (GameState.vsAI && GameState.currentPlayer === GameState.aiColorLabel) {
+            return (GameState.aiColorLabel === "Azul") ? "Vermelho" : "Azul";
+        }
+        return GameState.currentPlayer;
+    } 
 
     function updateRollUI() {
         const btn = document.getElementById("baralharDados");
@@ -204,9 +236,10 @@ document.addEventListener("DOMContentLoaded", () => {
         boardEl.style.setProperty("--cols", GameState.cols);
         boardEl.style.setProperty("--rows", GameState.rows);
         boardEl.innerHTML = "";
+        const persp = getPerspectivePlayer();
         for (let vr = 0; vr < GameState.rows; vr++) {
             for (let vc = 0; vc < GameState.cols; vc++) {
-                const { r, c } = fromView(vr, vc, GameState.currentPlayer);
+                const { r, c } = fromView(vr, vc, persp);
                 const cell = document.createElement("div");
                 cell.className = "cell";                 
                 cell.dataset.vr = vr;      
@@ -239,6 +272,7 @@ document.addEventListener("DOMContentLoaded", () => {
         setMsg("Carrega em Lançar Dados para começar.");
         clearHighlights();
         updateRollUI();
+        defer(aiMaybeAct, AI_DELAY.ROLL);    
     }
 
     const sizeSelect = document.getElementById("sizeSelect");
@@ -271,6 +305,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 clearHighlights();
                 updateRollUI();
                 highlightMoveablePieces();
+                defer(aiMaybeAct, AI_DELAY.PICK);
             }, 0);
         });
     }
@@ -376,13 +411,15 @@ document.addEventListener("DOMContentLoaded", () => {
             renderBoard(); // rodar perspetiva para o novo jogador
         }
         updateRollUI();
+        defer(aiMaybeAct, AI_DELAY.CHAIN);
     }
 
     /* ===== Seleção ===== */
     function highlightCells(modelCells) {
         clearHighlights();
+        const persp = getPerspectivePlayer();
         modelCells.forEach(({ r, c }) => {
-            const { vr, vc } = toView(r, c, GameState.currentPlayer);
+            const { vr, vc } = toView(r, c, persp);
             const el = cellElView(vr, vc);
             if (el) el.classList.add("hl");
         });
@@ -421,11 +458,149 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    /* ===== IA: utilitários ===== */
+    function meOwner(label){ return label === "Azul" ? "A" : "V"; }
+    function oppOwner(label){ return label === "Azul" ? "V" : "A"; }
+
+    function walkSteps(r, c, rem) {
+        let cur = { r, c };
+        let d = dirForRow(cur.r);
+        while (rem > 0) {
+            if (d === +1 && cur.c < GameState.cols - 1) { cur.c++; rem--; }
+            else if (d === -1 && cur.c > 0) { cur.c--; rem--; }
+            else {
+                if (cur.r === 0) { cur.r = 1; d = dirForRow(cur.r); rem--; }
+                else if (cur.r === 1) { cur.r = 2; d = dirForRow(cur.r); rem--; }
+                else if (cur.r === 3) { cur.r = 2; d = dirForRow(cur.r); rem--; }
+                else if (cur.r === 2) { cur.r = 3; d = dirForRow(cur.r); rem--; }
+            }
+        }
+        return cur;
+    }
+
+    function enumerateMovesFrom(r, c, steps, playerLabel) {
+        const moves = [];
+        const piece = GameState.board[r][c];
+        if (!piece) return moves;
+        const me = meOwner(playerLabel);
+        if (piece.owner !== me) return moves;
+
+        // Regra do 1º movimento
+        if (piece.moved === false) {
+            if (!isFrontOfStartRow(r, c)) return moves;
+            if (steps !== 1) return moves;
+
+            const tryStep = c + dirForRow(r);
+            if (tryStep >= 0 && tryStep <= GameState.cols - 1 && canLand(r, tryStep)) {
+                const cap = !!(GameState.board[r][tryStep] && GameState.board[r][tryStep].owner !== me);
+                moves.push({ from:{r,c}, to:{r, c:tryStep}, capture:cap });
+            }
+            const enterR = (piece.owner === "A") ? 2 : 1;
+            if (canLand(enterR, c)) {
+                const cap = !!(GameState.board[enterR][c] && GameState.board[enterR][c].owner !== me);
+                moves.push({ from:{r,c}, to:{r:enterR, c}, capture:cap });
+            }
+            return moves;
+        }
+
+        // ver se existe ramificação na 3ª linha
+        const probe = possibleAdvanceFrom(r, c, steps);
+        if (probe.needsChoice) {
+            // Duas opções: subir para 4ª (r=3) ou descer para 2ª (r=1), depois andar remaining
+            for (const opt of probe.options) {
+                const end = walkSteps(opt.r, opt.c, probe.remaining);
+                if (end.r == null) continue;
+                if (!canLand(end.r, end.c)) continue;
+                const cap = !!(GameState.board[end.r][end.c] && GameState.board[end.r][end.c].owner !== me);
+                moves.push({ from:{r,c}, to:{r:end.r, c:end.c}, capture:cap });
+            }
+        } else {
+            if (probe.r != null && canLand(probe.r, probe.c)) {
+                const cap = !!(GameState.board[probe.r][probe.c] && GameState.board[probe.r][probe.c].owner !== me);
+                moves.push({ from:{r,c}, to:{r:probe.r, c:probe.c}, capture:cap });
+            }
+        }
+        return moves;
+    }
+
+    // Jogadas válidas para o jogador atual com dado "steps"
+    function getValidMovesFor(playerLabel, steps) {
+        const me = meOwner(playerLabel);
+        const out = [];
+        for (let r = 0; r < GameState.rows; r++) {
+            for (let c = 0; c < GameState.cols; c++) {
+                const v = GameState.board[r][c];
+                if (!v || v.owner !== me) continue;
+                out.push(...enumerateMovesFrom(r, c, steps, playerLabel));
+            }
+        }
+        return out;
+    }
+
+    // AI prioriza capturas; se não houver, faz uma escolha aleatória
+    function aiPickMove(moves) {
+        if (!moves.length) return null;
+        const caps = moves.filter(m => m.capture);
+        if (caps.length) return caps[Math.floor(Math.random()*caps.length)];
+        return moves[Math.floor(Math.random()*moves.length)];
+    }
+
+    function isAITurn() {
+        return GameState.vsAI && GameState.currentPlayer === GameState.aiColorLabel && GameState.mode !== "finished";
+    }
+
+    function aiMaybeAct() {
+        if (!isAITurn()) return;
+
+        // 1) Precisa de lançar os dados?
+        if (GameState.mode === "awaitRoll") {
+            // Usa o teu botão para manter a UI e o som dos dados
+            const btn = document.getElementById("baralharDados");
+            if (btn && !btn.disabled) {
+                btn.click();
+                // dá tempo à UI para pintar realces
+                defer(aiMaybeAct, AI_DELAY.PICK);
+            }
+            return;
+        }
+
+        // 2) Escolher uma jogada válida e aplicá-la
+        if (GameState.mode === "awaitPiece") {
+            const d = GameState.dice.value;
+            const moves = getValidMovesFor(GameState.currentPlayer, d);
+            if (!moves.length) {
+                if (GameState.dice.canRepeat) {
+                    setMsg(`Sem jogada válida com ${d}. Lança novamente.`);
+                    GameState.mode = "awaitRoll";
+                } else {
+                    setMsg("Sem jogada válida. Passa a vez.");
+                    GameState.currentPlayer = (GameState.currentPlayer === "Azul") ? "Vermelho" : "Azul";
+                    GameState.mode = "awaitRoll";
+                }
+                GameState.dice = { sum: null, value: null, canRepeat: false };
+                clearHighlights();
+                renderBoard();
+                updateRollUI();
+                defer(aiMaybeAct, AI_DELAY.BRANCH);
+                return;
+            }
+
+            const move = aiPickMove(moves);
+            applyMove(move.from, move.to);
+            if (checkWin()) return;
+            GameState.selected = null;
+            endTurnOrRepeat();
+            return;
+        }
+    }
+
+
     /* ===== Cliques ===== */
     function onCellClick(e) {
         const vr = parseInt(e.currentTarget.dataset.vr, 10);
         const vc = parseInt(e.currentTarget.dataset.vc, 10);
-        const { r, c } = fromView(vr, vc, GameState.currentPlayer);
+        const persp = getPerspectivePlayer();
+        const { r, c } = fromView(vr, vc, persp);
 
         if (GameState.mode === "finished") return;
         if (GameState.mode === "awaitRoll") { setMsg("Primeiro lança os dados."); return; }
@@ -440,7 +615,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 GameState.mode = "awaitDestination";
                 GameState.selected = { r, c, remaining: dest.remaining };
                 setMsg("Estás na 3ª linha: escolhe o destino (4ª ou 2ª).");
-                const optsView = dest.options.map(o => toView(o.r, o.c, GameState.currentPlayer));
+                const optsView = dest.options.map(o => toView(o.r, o.c, persp));
                 clearHighlights();
                 optsView.forEach(({ vr, vc }) => {
                     const el = cellElView(vr, vc);
@@ -464,11 +639,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 { r: 3, c: from.c },
                 { r: 1, c: from.c }
             ];
-            const clickedModel = fromView(vr, vc, GameState.currentPlayer);
+            const clickedModel = fromView(vr, vc, perso);
             const clickedIsOption = options.find(o => o.r === clickedModel.r && o.c === clickedModel.c);
             if (!clickedIsOption) {
                 setMsg("Clica numa das casas destacadas.");
-                const optsView = options.map(o => toView(o.r, o.c, GameState.currentPlayer));
+                const optsView = options.map(o => toView(o.r, o.c, persp));
                 clearHighlights();
                 optsView.forEach(({ vr, vc }) => {
                     const el = cellElView(vr, vc);
@@ -491,7 +666,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             if (!canLand(cur.r, cur.c)) {
                 setMsg("Destino inválido.");
-                const optsView = options.map(o => toView(o.r, o.c, GameState.currentPlayer));
+                const optsView = options.map(o => toView(o.r, o.c, persp));
                 clearHighlights();
                 optsView.forEach(({ vr, vc }) => {
                     const el = cellElView(vr, vc);
