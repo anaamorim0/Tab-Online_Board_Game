@@ -106,7 +106,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     })();
 
-    /* ===== UI ===== */
     let statusEl = document.getElementById("statusMsg");
     if (!statusEl) {
         statusEl = document.createElement("div");
@@ -126,7 +125,9 @@ document.addEventListener("DOMContentLoaded", () => {
         document.querySelectorAll(".tabuleiro div.hl").forEach(el => el.classList.remove("hl"));
     }
 
-    /* ===== Estado ===== */
+    // state 0|1|2 = (0: nunca moveu) (1: moveu e nunca esteve na 4.ª) (2: já esteve na 4.ª)
+    const STAGE = { NOT_MOVED: 0, MOVED_NOT_LAST: 1, HAS_BEEN_LAST: 2 };
+
     const GameState = {
         mode: "awaitRoll",
         currentPlayer: "Azul",
@@ -135,11 +136,10 @@ document.addEventListener("DOMContentLoaded", () => {
         rows: 4,
         cols: parseInt(document.getElementById("sizeSelect")?.value || "9", 10),
         board: []
-    };    
-    
-    /* === MODO IA === */
-    GameState.vsAI = false;              
-    GameState.aiColorLabel = "Vermelho"; 
+    };
+
+    GameState.vsAI = false;
+    GameState.aiColorLabel = "Vermelho";
 
     document.getElementById("jogador")?.addEventListener("click", () => {
         GameState.vsAI = false;
@@ -151,17 +151,9 @@ document.addEventListener("DOMContentLoaded", () => {
         GameState.aiColorLabel = "Vermelho";
     });
 
-    /* ==== IA: Delays ==== */
-    const AI_DELAY = {
-    ROLL:   1200, 
-    PICK:   1500,
-    BRANCH: 1500,
-    CHAIN:  1000  
-    };
+    const AI_DELAY = { ROLL: 1200, PICK: 1500, BRANCH: 1500, CHAIN: 1000 };
+    function defer(fn, ms) { setTimeout(fn, ms); }
 
-    function defer(fn, ms){ setTimeout(fn, ms); }
-
-    /* ===== Perspetiva (NOVO) ===== */
     function toView(r, c, player) {
         if (player === "Azul") return { vr: r, vc: c };
         return { vr: GameState.rows - 1 - r, vc: GameState.cols - 1 - c };
@@ -171,13 +163,12 @@ document.addEventListener("DOMContentLoaded", () => {
         return { r: GameState.rows - 1 - vr, c: GameState.cols - 1 - vc };
     }
 
-    // não roda o tabuleiro quando é a vez do AI
-    function getPerspectivePlayer(){
+    function getPerspectivePlayer() {
         if (GameState.vsAI && GameState.currentPlayer === GameState.aiColorLabel) {
             return (GameState.aiColorLabel === "Azul") ? "Vermelho" : "Azul";
         }
         return GameState.currentPlayer;
-    } 
+    }
 
     function updateRollUI() {
         const btn = document.getElementById("baralharDados");
@@ -191,32 +182,32 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    function dirForRow(r) { return (r === 0 || r === 2) ? -1 : +1; }
+    // NOVO: direção para a serpentina (linhas 3 e 1 →; 2 e 0 ←)
+    function dirForRow(r) { return (r === 3 || r === 1) ? +1 : -1; }
+
     function initialRow(owner) { return owner === "A" ? 3 : 0; }
 
     function isFrontOfStartRow(r, c) {
         const cell = GameState.board[r][c];
         if (!cell) return false;
         const owner = cell.owner;
-        if (r !== initialRow(owner) || cell.moved) return true;
+        if (r !== initialRow(owner) || cell.stage !== STAGE.NOT_MOVED) return true;
         const dir = dirForRow(r);
         if (dir === +1) {
             for (let cc = GameState.cols - 1; cc >= 0; cc--) {
                 const v = GameState.board[r][cc];
-                if (v && v.owner === owner && v.moved === false) return cc === c;
+                if (v && v.owner === owner && v.stage === STAGE.NOT_MOVED) return cc === c;
             }
         } else {
             for (let cc = 0; cc < GameState.cols; cc++) {
                 const v = GameState.board[r][cc];
-                if (v && v.owner === owner && v.moved === false) return cc === c;
+                if (v && v.owner === owner && v.stage === STAGE.NOT_MOVED) return cc === c;
             }
         }
         return false;
     }
 
-    /* ===== Tabuleiro ===== */
     const boardEl = document.getElementById("tabuleiro");
-
     function cellElView(vr, vc) {
         return document.querySelector(`.tabuleiro div[data-vr="${vr}"][data-vc="${vc}"]`);
     }
@@ -225,8 +216,8 @@ document.addEventListener("DOMContentLoaded", () => {
         GameState.cols = cols;
         GameState.board = Array.from({ length: GameState.rows }, (_, r) =>
             Array.from({ length: GameState.cols }, (_, c) => {
-                if (r === 3) return { owner: "A", moved: false };
-                if (r === 0) return { owner: "V", moved: false };
+                if (r === 3) return { owner: "A", stage: STAGE.NOT_MOVED };
+                if (r === 0) return { owner: "V", stage: STAGE.NOT_MOVED };
                 return null;
             })
         );
@@ -241,16 +232,13 @@ document.addEventListener("DOMContentLoaded", () => {
             for (let vc = 0; vc < GameState.cols; vc++) {
                 const { r, c } = fromView(vr, vc, persp);
                 const cell = document.createElement("div");
-                cell.className = "cell";                 
-                cell.dataset.vr = vr;      
+                cell.className = "cell";
+                cell.dataset.vr = vr;
                 cell.dataset.vc = vc;
 
                 const v = GameState.board[r][c];
                 if (v) {
-                    
                     cell.textContent = "";
-
-                 
                     const piece = document.createElement("div");
                     piece.className = "piece " + (v.owner === "A" ? "azul" : "vermelha");
                     cell.appendChild(piece);
@@ -258,7 +246,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 cell.addEventListener("click", onCellClick);
                 boardEl.appendChild(cell);
-
             }
         }
     }
@@ -272,7 +259,7 @@ document.addEventListener("DOMContentLoaded", () => {
         setMsg("Carrega em Lançar Dados para começar.");
         clearHighlights();
         updateRollUI();
-        defer(aiMaybeAct, AI_DELAY.ROLL);    
+        defer(aiMaybeAct, AI_DELAY.ROLL);
     }
 
     const sizeSelect = document.getElementById("sizeSelect");
@@ -283,7 +270,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    /* ===== Dados ===== */
     function lerLancamentoPaus() {
         const claros = Array.from(document.querySelectorAll(".dado"))
             .reduce((acc, d) => acc + (d.classList.contains("up") ? 1 : 0), 0);
@@ -310,63 +296,139 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    /* ===== Movimento ===== */
+    function meOwner(label) { return label === "Azul" ? "A" : "V"; }
+
+    // NOVO: “4.ª linha só mexe se a 1.ª da mesma cor estiver vazia”
+    function onFourthRow(r, owner) { return (owner === "A" && r === 0) || (owner === "V" && r === 3); }
+    function hasOwnInInitialRow(owner) {
+        const row = initialRow(owner);
+        return GameState.board[row].some(cell => cell && cell.owner === owner);
+    }
+
     function isOwnPiece(r, c) {
-        const me = GameState.currentPlayer === "Azul" ? "A" : "V";
+        const me = meOwner(GameState.currentPlayer);
         const v = GameState.board[r][c];
         return v && v.owner === me;
     }
     function canLand(r, c) {
-        const me = GameState.currentPlayer === "Azul" ? "A" : "V";
+        const me = meOwner(GameState.currentPlayer);
         const v = GameState.board[r][c];
         return !v || v.owner !== me;
     }
 
+    // NOVO: caminho determinístico (sem saltos verticais e sem bifurcação)
     function possibleAdvanceFrom(r, c, steps) {
-        let curR = r, curC = c, rem = steps;
         const piece = GameState.board[r][c];
-        let d = dirForRow(curR);
+        if (!piece) return { r: null, c: null, needsChoice: false };
 
-        if (piece && piece.moved === false && GameState.dice.value === 1) {
-            const startRow = initialRow(piece.owner);
-            if (r === startRow) {
-                const tryStep = c + dirForRow(r);
-                if (tryStep >= 0 && tryStep <= GameState.cols - 1 && canLand(r, tryStep)) {
-                    return { r, c: tryStep, needsChoice: false };
-                }
-                const enterR = (piece.owner === "A") ? 2 : 1;
-                if (canLand(enterR, c)) {
-                    return { r: enterR, c, needsChoice: false };
-                }
-                return { r: null, c: null, needsChoice: false };
-            }
+        // 4.ª linha só mexe se a 1.ª da MESMA cor estiver vazia
+        if (onFourthRow(r, piece.owner) && hasOwnInInitialRow(piece.owner)) {
+            return { r: null, c: null, needsChoice: false };
         }
+
+        // 1.º movimento tem de ser 1 (Tâb)
+        if (piece.stage === STAGE.NOT_MOVED && steps !== 1) {
+            return { r: null, c: null, needsChoice: false };
+        }
+
+        // 1.º movimento com 1: anda na horizontal; se estiver no fim, sobe uma linha
+        if (piece.stage === STAGE.NOT_MOVED && steps === 1) {
+            const d0 = dirForRow(r);
+            const nc = c + d0;
+            if (nc >= 0 && nc < GameState.cols && canLand(r, nc)) {
+                return { r, c: nc, needsChoice: false };
+            }
+            const nr = (piece.owner === "A") ? r - 1 : r + 1; // Azul: 3→2 ; Vermelho: 0→1
+            if (nr >= 0 && nr < GameState.rows && canLand(nr, c)) {
+                return { r: nr, c, needsChoice: false };
+            }
+            return { r: null, c: null, needsChoice: false };
+        }
+
+        // resto dos movimentos: serpentina com BIFURCAÇÃO ao sair da 3.ª linha (índice 1)
+        let curR = r, curC = c, rem = steps;
 
         while (rem > 0) {
-            if (d === +1 && curC < GameState.cols - 1) { curC++; rem--; }
-            else if (d === -1 && curC > 0) { curC--; rem--; }
-            else {
-                if (curR === 2) {
-                    if (rem > 0) {
-                        const up = { r: 3, c: curC };
-                        const down = { r: 1, c: curC };
-                        return { needsChoice: true, options: [up, down], remaining: rem - 1 };
-                    }
-                    break;
-                } else if (curR === 0) { curR = 1; d = dirForRow(curR); rem--; }
-                else if (curR === 1) { curR = 2; d = dirForRow(curR); rem--; }
-                else if (curR === 3) { curR = 2; d = dirForRow(curR); rem--; }
+            const d = dirForRow(curR);
+            // tenta andar na horizontal
+            if (d === +1 && curC < GameState.cols - 1) { curC++; rem--; continue; }
+            if (d === -1 && curC > 0) { curC--; rem--; continue; }
+
+            // fim da fila → transição vertical consome 1 passo
+            if (rem > 0) {
+                if (curR === 3) { // 1.ª linha (de baixo) sai para 2.ª (índice 2)
+                    curR = 2; rem--;
+                    continue;
+                }
+                if (curR === 2) { // 2.ª sai para 3.ª (índice 1)
+                    curR = 1; rem--;
+                    continue;
+                }
+                if (curR === 0) { // 4.ª volta para 3.ª (índice 1)
+                    curR = 1; rem--;
+                    continue;
+                }
+                if (curR === 1) { // 3.ª linha → BIFURCAÇÃO (4.ª OU 2.ª)
+                    // preparar opções; se já esteve na 4.ª, não pode subir novamente
+                    const up = (piece.stage === STAGE.HAS_BEEN_LAST) ? null : { r: 0, c: curC };
+                    const down = { r: 2, c: curC };
+                    const options = [];
+                    if (up) options.push(up);
+                    options.push(down);
+                    return { needsChoice: options.length > 1, options, remaining: rem - 1 };
+                }
             }
         }
+
         return { r: curR, c: curC, needsChoice: false };
     }
 
-    /* ===== Aplicar Jogada ===== */
+
+    function walkSteps(r, c, rem) {
+        let curR = r, curC = c, steps = rem;
+        while (steps > 0) {
+            const d = dirForRow(curR);
+            if (d === +1 && curC < GameState.cols - 1) { curC++; steps--; continue; }
+            if (d === -1 && curC > 0) { curC--; steps--; continue; }
+            if (steps > 0) {
+                if (curR === 3) { curR = 2; steps--; }
+                else if (curR === 2) { curR = 1; steps--; }
+                else if (curR === 1) { curR = 0; steps--; }
+                else if (curR === 0) { curR = 1; steps--; }
+            }
+        }
+        return { r: curR, c: curC };
+    }
+
+    // NOVO: coordenadas “de leitura” (filas 1..4 de baixo p/ cima; colunas 1..n nas filas 1/3, n..1 nas filas 2/4)
+    function displayCoords(r, c) {
+        const persp = getPerspectivePlayer();
+        const { vr, vc } = toView(r, c, persp);
+        const rowNum = (GameState.rows) - vr;
+        const isLR = (rowNum === 1 || rowNum === 3);
+        const colLabel = isLR ? (vc + 1) : (GameState.cols - vc);
+        return { row: rowNum, col: colLabel };
+    }
+
     function applyMove(from, to) {
-        const me = GameState.currentPlayer === "Azul" ? "A" : "V";
-        GameState.board[to.r][to.c] = { owner: me, moved: true };
+        const me = meOwner(GameState.currentPlayer);
+        const piece = GameState.board[from.r][from.c];
+
+        GameState.board[to.r][to.c] = { owner: me, stage: piece.stage };
         GameState.board[from.r][from.c] = null;
+
+        if (GameState.board[to.r][to.c].stage === STAGE.NOT_MOVED) {
+            GameState.board[to.r][to.c].stage = STAGE.MOVED_NOT_LAST;
+        }
+        if ((me === "A" && to.r === 0) || (me === "V" && to.r === 3)) {
+            GameState.board[to.r][to.c].stage = STAGE.HAS_BEEN_LAST;
+        }
+
         renderBoard();
+
+        const a = displayCoords(from.r, from.c);
+        const b = displayCoords(to.r, to.c);
+        setMsg(`Movimento: (${a.row},${a.col}) ➜ (${b.row},${b.col}).`);
     }
 
     function countPieces(owner) {
@@ -402,19 +464,18 @@ document.addEventListener("DOMContentLoaded", () => {
             GameState.mode = "awaitRoll";
             setMsg(`Tiraste 1, 4 ou 6. Lança novamente (${GameState.currentPlayer}).`);
             clearHighlights();
-            renderBoard(); // manter perspetiva do mesmo jogador
+            renderBoard();
         } else {
             GameState.currentPlayer = (GameState.currentPlayer === "Azul") ? "Vermelho" : "Azul";
             GameState.mode = "awaitRoll";
             setMsg(`Vez de ${GameState.currentPlayer}. Carrega em Lançar Dados.`);
             clearHighlights();
-            renderBoard(); // rodar perspetiva para o novo jogador
+            renderBoard();
         }
         updateRollUI();
         defer(aiMaybeAct, AI_DELAY.CHAIN);
     }
 
-    /* ===== Seleção ===== */
     function highlightCells(modelCells) {
         clearHighlights();
         const persp = getPerspectivePlayer();
@@ -426,22 +487,28 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function highlightMoveablePieces() {
-        const me = GameState.currentPlayer === "Azul" ? "A" : "V";
+        const me = meOwner(GameState.currentPlayer);
         const cells = [];
         for (let r = 0; r < GameState.rows; r++) {
             for (let c = 0; c < GameState.cols; c++) {
                 const v = GameState.board[r][c];
-                if (v && v.owner === me) {
-                    if (v.moved === false && !isFrontOfStartRow(r, c)) continue;
-                    if (v.moved === false && GameState.dice.value !== 1) continue;
-                    const dest = possibleAdvanceFrom(r, c, GameState.dice.value);
-                    if (dest.needsChoice || (dest.r != null && canLand(dest.r, dest.c))) {
-                        cells.push({ r, c });
-                    }
+                if (!v || v.owner !== me) continue;
+
+                if (onFourthRow(r, v.owner) && hasOwnInInitialRow(v.owner)) continue;
+
+                if (v.stage === STAGE.NOT_MOVED && !isFrontOfStartRow(r, c)) continue;
+                if (v.stage === STAGE.NOT_MOVED && GameState.dice.value !== 1) continue;
+
+                const dest = possibleAdvanceFrom(r, c, GameState.dice.value);
+
+            
+                if (dest.needsChoice || (dest.r != null && canLand(dest.r, dest.c))) {
+                    cells.push({ r, c });
                 }
             }
         }
         highlightCells(cells);
+
         if (cells.length === 0) {
             if (GameState.dice.canRepeat) {
                 setMsg(`Sem jogada válida com ${GameState.dice.value}. Lança novamente.`);
@@ -458,91 +525,79 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    /* ===== IA: utilitários ===== */
-    function meOwner(label){ return label === "Azul" ? "A" : "V"; }
-    function oppOwner(label){ return label === "Azul" ? "V" : "A"; }
 
-    function walkSteps(r, c, rem) {
-        let cur = { r, c };
-        let d = dirForRow(cur.r);
-        while (rem > 0) {
-            if (d === +1 && cur.c < GameState.cols - 1) { cur.c++; rem--; }
-            else if (d === -1 && cur.c > 0) { cur.c--; rem--; }
-            else {
-                if (cur.r === 0) { cur.r = 1; d = dirForRow(cur.r); rem--; }
-                else if (cur.r === 1) { cur.r = 2; d = dirForRow(cur.r); rem--; }
-                else if (cur.r === 3) { cur.r = 2; d = dirForRow(cur.r); rem--; }
-                else if (cur.r === 2) { cur.r = 3; d = dirForRow(cur.r); rem--; }
-            }
-        }
-        return cur;
-    }
-
+    // IA
     function enumerateMovesFrom(r, c, steps, playerLabel) {
-        const moves = [];
         const piece = GameState.board[r][c];
+        const moves = [];
         if (!piece) return moves;
         const me = meOwner(playerLabel);
         if (piece.owner !== me) return moves;
 
-        // Regra do 1º movimento
-        if (piece.moved === false) {
+        if (onFourthRow(r, me) && hasOwnInInitialRow(me)) return moves;
+
+        // 1.º movimento: só a peça da frente e dado = 1
+        if (piece.stage === STAGE.NOT_MOVED) {
             if (!isFrontOfStartRow(r, c)) return moves;
             if (steps !== 1) return moves;
 
-            const tryStep = c + dirForRow(r);
-            if (tryStep >= 0 && tryStep <= GameState.cols - 1 && canLand(r, tryStep)) {
-                const cap = !!(GameState.board[r][tryStep] && GameState.board[r][tryStep].owner !== me);
-                moves.push({ from:{r,c}, to:{r, c:tryStep}, capture:cap });
+            const d = dirForRow(r);
+            const nc = c + d;
+
+            // na mesma linha
+            if (nc >= 0 && nc < GameState.cols && canLand(r, nc)) {
+                const cap = !!(GameState.board[r][nc] && GameState.board[r][nc].owner !== me);
+                moves.push({ from: { r, c }, to: { r, c: nc }, capture: cap });
+                return moves;
             }
-            const enterR = (piece.owner === "A") ? 2 : 1;
-            if (canLand(enterR, c)) {
-                const cap = !!(GameState.board[enterR][c] && GameState.board[enterR][c].owner !== me);
-                moves.push({ from:{r,c}, to:{r:enterR, c}, capture:cap });
+            // no fim da linha → sobe uma linha
+            const nr = (piece.owner === "A") ? r - 1 : r + 1;
+            if (nr >= 0 && nr < GameState.rows && canLand(nr, c)) {
+                const cap = !!(GameState.board[nr][c] && GameState.board[nr][c].owner !== me);
+                moves.push({ from: { r, c }, to: { r: nr, c }, capture: cap });
             }
             return moves;
         }
 
-        // ver se existe ramificação na 3ª linha
+        // sonda o destino: pode devolver bifurcação na 3.ª linha
         const probe = possibleAdvanceFrom(r, c, steps);
         if (probe.needsChoice) {
-            // Duas opções: subir para 4ª (r=3) ou descer para 2ª (r=1), depois andar remaining
             for (const opt of probe.options) {
                 const end = walkSteps(opt.r, opt.c, probe.remaining);
                 if (end.r == null) continue;
                 if (!canLand(end.r, end.c)) continue;
                 const cap = !!(GameState.board[end.r][end.c] && GameState.board[end.r][end.c].owner !== me);
-                moves.push({ from:{r,c}, to:{r:end.r, c:end.c}, capture:cap });
+                moves.push({ from: { r, c }, to: { r: end.r, c: end.c }, capture: cap });
             }
-        } else {
-            if (probe.r != null && canLand(probe.r, probe.c)) {
-                const cap = !!(GameState.board[probe.r][probe.c] && GameState.board[probe.r][probe.c].owner !== me);
-                moves.push({ from:{r,c}, to:{r:probe.r, c:probe.c}, capture:cap });
-            }
+            return moves;
+        }
+
+        if (probe.r != null && canLand(probe.r, probe.c)) {
+            const cap = !!(GameState.board[probe.r][probe.c] && GameState.board[probe.r][probe.c].owner !== me);
+            moves.push({ from: { r, c }, to: { r: probe.r, c: probe.c }, capture: cap });
         }
         return moves;
     }
 
-    // Jogadas válidas para o jogador atual com dado "steps"
+
+
     function getValidMovesFor(playerLabel, steps) {
-        const me = meOwner(playerLabel);
         const out = [];
         for (let r = 0; r < GameState.rows; r++) {
             for (let c = 0; c < GameState.cols; c++) {
                 const v = GameState.board[r][c];
-                if (!v || v.owner !== me) continue;
+                if (!v || v.owner !== meOwner(playerLabel)) continue;
                 out.push(...enumerateMovesFrom(r, c, steps, playerLabel));
             }
         }
         return out;
     }
 
-    // AI prioriza capturas; se não houver, faz uma escolha aleatória
     function aiPickMove(moves) {
         if (!moves.length) return null;
         const caps = moves.filter(m => m.capture);
-        if (caps.length) return caps[Math.floor(Math.random()*caps.length)];
-        return moves[Math.floor(Math.random()*moves.length)];
+        if (caps.length) return caps[Math.floor(Math.random() * caps.length)];
+        return moves[Math.floor(Math.random() * moves.length)];
     }
 
     function isAITurn() {
@@ -552,19 +607,15 @@ document.addEventListener("DOMContentLoaded", () => {
     function aiMaybeAct() {
         if (!isAITurn()) return;
 
-        // 1) Precisa de lançar os dados?
         if (GameState.mode === "awaitRoll") {
-            // Usa o teu botão para manter a UI e o som dos dados
             const btn = document.getElementById("baralharDados");
             if (btn && !btn.disabled) {
                 btn.click();
-                // dá tempo à UI para pintar realces
                 defer(aiMaybeAct, AI_DELAY.PICK);
             }
             return;
         }
 
-        // 2) Escolher uma jogada válida e aplicá-la
         if (GameState.mode === "awaitPiece") {
             const d = GameState.dice.value;
             const moves = getValidMovesFor(GameState.currentPlayer, d);
@@ -594,8 +645,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-
-    /* ===== Cliques ===== */
     function onCellClick(e) {
         const vr = parseInt(e.currentTarget.dataset.vr, 10);
         const vc = parseInt(e.currentTarget.dataset.vc, 10);
@@ -603,82 +652,107 @@ document.addEventListener("DOMContentLoaded", () => {
         const { r, c } = fromView(vr, vc, persp);
 
         if (GameState.mode === "finished") return;
-        if (GameState.mode === "awaitRoll") { setMsg("Primeiro lança os dados."); return; }
+
+        if (GameState.mode === "awaitRoll") {
+            setMsg("Primeiro lança os dados.");
+            return;
+        }
 
         if (GameState.mode === "awaitPiece") {
             if (!isOwnPiece(r, c)) { setMsg("Escolhe uma peça tua."); return; }
             const piece = GameState.board[r][c];
-            if (piece && piece.moved === false && !isFrontOfStartRow(r, c)) { setMsg("Na fila inicial só podes mexer a peça da frente."); return; }
-            if (piece && piece.moved === false && GameState.dice.value !== 1) { setMsg("Essa peça ainda não se moveu. O 1º movimento tem de ser com 1 (Tâb)."); return; }
+
+            // 4.ª linha bloqueada se a 1.ª da mesma cor tiver peças
+            if (onFourthRow(r, piece.owner) && hasOwnInInitialRow(piece.owner)) {
+                setMsg("Na 4.ª linha só mexe se a 1.ª da tua cor estiver vazia.");
+                return;
+            }
+
+            // 1.º movimento: só a peça da frente e com 1 (Tâb)
+            if (piece.stage === STAGE.NOT_MOVED && !isFrontOfStartRow(r, c)) {
+                setMsg("Na fila inicial só podes mexer a peça da frente (à direita).");
+                return;
+            }
+            if (piece.stage === STAGE.NOT_MOVED && GameState.dice.value !== 1) {
+                setMsg("O 1.º movimento tem de ser com 1 (Tâb).");
+                return;
+            }
+
+            // calcula destino (pode devolver bifurcação ao sair da 3.ª linha)
             const dest = possibleAdvanceFrom(r, c, GameState.dice.value);
+
             if (dest.needsChoice) {
                 GameState.mode = "awaitDestination";
                 GameState.selected = { r, c, remaining: dest.remaining };
-                setMsg("Estás na 3ª linha: escolhe o destino (4ª ou 2ª).");
-                const optsView = dest.options.map(o => toView(o.r, o.c, persp));
+
+                // realça as duas casas de escolha (4.ª ou 2.ª), respeitando “já esteve na 4.ª”
+                const pieceHere = GameState.board[r][c];
+                const options = [];
+                if (pieceHere.stage !== STAGE.HAS_BEEN_LAST) options.push({ r: 0, c }); // subir para 4.ª
+                options.push({ r: 2, c });                                             // descer para 2.ª
+
+                const optsView = options.map(o => toView(o.r, o.c, persp));
                 clearHighlights();
                 optsView.forEach(({ vr, vc }) => {
                     const el = cellElView(vr, vc);
                     if (el) el.classList.add("hl");
                 });
-                return;
-            } else {
-                if (dest.r == null || !canLand(dest.r, dest.c)) { setMsg("Jogada inválida para essa peça."); return; }
-                applyMove({ r, c }, { r: dest.r, c: dest.c });
-                if (checkWin()) return;
-                GameState.selected = null;
-                endTurnOrRepeat();
+
+                setMsg("Estás na 3.ª linha: escolhe o destino (4.ª ou 2.ª).");
                 return;
             }
+
+            // jogada direta (sem bifurcação)
+            if (dest.r == null || !canLand(dest.r, dest.c)) {
+                setMsg("Jogada inválida.");
+                return;
+            }
+            applyMove({ r, c }, { r: dest.r, c: dest.c });
+            if (checkWin()) return;
+            GameState.selected = null;
+            endTurnOrRepeat();
+            return;
         }
 
+        // >>> ADICIONAR ESTE BLOCO PARA A BIFURCAÇÃO <<<
         if (GameState.mode === "awaitDestination") {
             const from = GameState.selected;
             if (!from) { GameState.mode = "awaitPiece"; return; }
-            const options = [
-                { r: 3, c: from.c },
-                { r: 1, c: from.c }
-            ];
-            const clickedModel = fromView(vr, vc, perso);
-            const clickedIsOption = options.find(o => o.r === clickedModel.r && o.c === clickedModel.c);
-            if (!clickedIsOption) {
+
+            const piece = GameState.board[from.r][from.c];
+
+            // opções válidas ao sair da 3.ª linha: 4.ª (se nunca lá esteve) ou 2.ª
+            const options = [];
+            if (piece.stage !== STAGE.HAS_BEEN_LAST) options.push({ r: 0, c: from.c }); // subir
+            options.push({ r: 2, c: from.c });                                          // descer
+
+            const clickedModel = fromView(vr, vc, persp);
+            const picked = options.find(o => o.r === clickedModel.r && o.c === clickedModel.c);
+
+            if (!picked) {
                 setMsg("Clica numa das casas destacadas.");
                 const optsView = options.map(o => toView(o.r, o.c, persp));
                 clearHighlights();
-                optsView.forEach(({ vr, vc }) => {
-                    const el = cellElView(vr, vc);
-                    if (el) el.classList.add("hl");
-                });
+                optsView.forEach(({ vr, vc }) => cellElView(vr, vc)?.classList.add("hl"));
                 return;
             }
-            let cur = { r: clickedModel.r, c: clickedModel.c };
-            let rem = from.remaining;
-            let d = dirForRow(cur.r);
-            while (rem > 0) {
-                if (d === +1 && cur.c < GameState.cols - 1) { cur.c++; rem--; }
-                else if (d === -1 && cur.c > 0) { cur.c--; rem--; }
-                else {
-                    if (cur.r === 0) { cur.r = 1; d = dirForRow(cur.r); rem--; }
-                    else if (cur.r === 1) { cur.r = 2; d = dirForRow(cur.r); rem--; }
-                    else if (cur.r === 3) { cur.r = 2; d = dirForRow(cur.r); rem--; }
-                    else if (cur.r === 2) { cur.r = 3; d = dirForRow(cur.r); rem--; }
-                }
-            }
-            if (!canLand(cur.r, cur.c)) {
+
+            // continuar os passos restantes depois da escolha
+            const end = walkSteps(picked.r, picked.c, from.remaining);
+            if (!canLand(end.r, end.c)) {
                 setMsg("Destino inválido.");
                 const optsView = options.map(o => toView(o.r, o.c, persp));
                 clearHighlights();
-                optsView.forEach(({ vr, vc }) => {
-                    const el = cellElView(vr, vc);
-                    if (el) el.classList.add("hl");
-                });
+                optsView.forEach(({ vr, vc }) => cellElView(vr, vc)?.classList.add("hl"));
                 return;
             }
-            applyMove({ r: from.r, c: from.c }, { r: cur.r, c: cur.c });
+
+            applyMove({ r: from.r, c: from.c }, { r: end.r, c: end.c });
             if (checkWin()) return;
             GameState.selected = null;
             GameState.mode = "awaitPiece";
             endTurnOrRepeat();
+            return;
         }
     }
 });
