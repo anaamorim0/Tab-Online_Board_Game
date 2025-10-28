@@ -170,7 +170,7 @@ html, body {
 .button-entrar:hover {
     background-color: #a0522d;
     transform: translateY(-1px);
-    color: #230a07;
+    color: #fff;
 }
 
 
