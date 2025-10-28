@@ -15,6 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const regrasMenu = document.getElementById("regrasMenu");
     const classButton = document.getElementById("classButton");
     const classMenu = document.getElementById("classMenu");
+    const voltarButton = document.getElementById("voltarButton");
 
     const settingsIcon = settingsButton.querySelector("img");
     const loginIcon = userButton.querySelector("img");
@@ -60,6 +61,10 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+        // Função que será chamada ao clicar no botão "Voltar ao Início"
+    voltarButton.addEventListener("click", () => {
+        restartToModeSelection();  // Chama a função para reiniciar o jogo e as configurações
+    });
 
     regrasButton.addEventListener("click", () => {
         if (regrasMenu.classList.contains("hidden")) {
