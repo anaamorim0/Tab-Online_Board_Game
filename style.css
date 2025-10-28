@@ -130,7 +130,6 @@ html, body {
     font-size: 10px;
 }
 
-
 .pass-form input{
     position: absolute;
     top: 35%;
@@ -169,6 +168,60 @@ html, body {
 }
 
 .button-entrar:hover {
+    background-color: #a0522d;
+    transform: translateY(-1px);
+    color: #230a07;
+}
+
+
+/* Logged */
+.logged-menu {
+    position: absolute;
+    top: 19%;
+    left: 67%;
+    transform: translate(-50%, -50%);
+    width: 30%;
+    height: 18%;
+    background-color: #230a07;
+    border-radius: 9px;
+    z-index: 1010;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    margin-top: 15px;
+    margin-left: 15px;
+}
+
+.username-text {
+    position: absolute;
+    top: 30px;
+    left: 60px; 
+    font-family: "Georgia", serif;
+    color: #fff;
+    font-size: 1.2rem;
+}
+
+.button-sair {
+    position: absolute;
+    top: 60%;
+    left: 20%;
+    width: 60%;
+    height: 22%;
+    border-radius: 8px;
+    background-color: #ece5da; 
+    color: #6d6b68; 
+    font-size: 0.7rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;       
+    border: none;               
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.button-sair:hover {
     background-color: #a0522d;
     transform: translateY(-1px);
     color: #230a07;
@@ -466,7 +519,7 @@ html, body {
 
 
 /*----------------------------------------------*/
-/* Classificações Button*/
+/* Classificações Button */
 .class-button {
     position: absolute;
     top: 36%;
@@ -657,11 +710,11 @@ html, body {
 }
 
 .dado.up {
-  background-color: #230a07;
+    background-color: #fff;
 }
 
 .dado.down {
-  background-color: #fff;
+    background-color: #230a07;
 }
 
 /* Botão */
@@ -716,41 +769,40 @@ html, body {
     border-radius: 8px;
 }
 
-/* Esconder */
-.hidden { 
-    display: none; 
-}
 
-/* ---- Peças (círculos centrados por cima da madeira) ---- */
-
+/*----------------------------------------------*/
+/* Peças */
 .tabuleiro div.cell {
-  position: relative;          /* para posicionar a peça dentro */
-  overflow: hidden;
+    position: relative;       
+    overflow: hidden;
 }
 
 .tabuleiro div.cell .piece {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 44%;                  /* tamanho da peça (ajusta 36–50%) */
-  aspect-ratio: 1 / 1;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  z-index: 2;                  /* acima do fundo de madeira */
-  pointer-events: none;        /* não bloqueia cliques na célula */
-  box-shadow:
-    inset 0 0 6px rgba(0,0,0,.35),
-    0 1px 2px rgba(0,0,0,.25);
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 44%;          
+    aspect-ratio: 1 / 1;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    z-index: 2;          
+    pointer-events: none;   
+    box-shadow:
+        inset 0 0 6px rgba(0,0,0,.35),
+        0 1px 2px rgba(0,0,0,.25);
 }
 
 .tabuleiro div.cell .piece.azul {
-  background:
-    radial-gradient(35% 35% at 30% 30%, rgba(255,255,255,.35), transparent 60%),
-    #1e90ff;
+    background: radial-gradient(35% 35% at 30% 30%, rgba(255,255,255,.35), transparent 60%), #1e90ff;
 }
 
 .tabuleiro div.cell .piece.vermelha {
-  background:
-    radial-gradient(35% 35% at 30% 30%, rgba(255,255,255,.35), transparent 60%),
-    #d22f2f;
+    background: radial-gradient(35% 35% at 30% 30%, rgba(255,255,255,.35), transparent 60%), #d22f2f;
+}
+
+
+/*----------------------------------------------*/
+/* Esconder */
+.hidden { 
+    display: none; 
 }

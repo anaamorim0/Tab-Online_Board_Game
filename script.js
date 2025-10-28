@@ -27,25 +27,63 @@ document.addEventListener("DOMContentLoaded", () => {
         logo.classList.remove("hidden");
     });
 
+
+    const closeAllMenus = () => {
+        [loginMenu, settingsMenu, regrasMenu, classMenu].forEach(menu => menu.classList.add("hidden"));
+        loginIcon.src = "img/user_logo.png";
+        settingsIcon.src = "img/settings_logo.png";
+        regrasIcon.src = "img/regras_logo.png";
+        classIcon.src = "img/classificacoes_logo.png";
+    };
+
+
     userButton.addEventListener("click", () => {
-        loginMenu.classList.toggle("hidden");
-        loginIcon.src = loginMenu.classList.contains("hidden") ? "img/user_logo.png" : "img/user_logo_2.png";
+        if (loginMenu.classList.contains("hidden")) {
+            closeAllMenus(); 
+            loginMenu.classList.remove("hidden");
+            loginIcon.src = "img/user_logo_2.png";
+        } else {
+            loginMenu.classList.add("hidden");
+            loginIcon.src = "img/user_logo.png";
+        }
     });
+
 
     settingsButton.addEventListener("click", () => {
-        settingsMenu.classList.toggle("hidden");
-        settingsIcon.src = settingsMenu.classList.contains("hidden") ? "img/settings_logo.png" : "img/settings_logo_2.png";
+        if (settingsMenu.classList.contains("hidden")) {
+            closeAllMenus();
+            settingsMenu.classList.remove("hidden");
+            settingsIcon.src = "img/settings_logo_2.png";
+        } else {
+            settingsMenu.classList.add("hidden");
+            settingsIcon.src = "img/settings_logo.png";
+        }
     });
+
 
     regrasButton.addEventListener("click", () => {
-        regrasMenu.classList.toggle("hidden");
-        regrasIcon.src = regrasMenu.classList.contains("hidden") ? "img/regras_logo.png" : "img/regras_logo_2.png";
+        if (regrasMenu.classList.contains("hidden")) {
+            closeAllMenus(); 
+            regrasMenu.classList.remove("hidden");
+            regrasIcon.src = "img/regras_logo_2.png";
+        } else {
+            regrasMenu.classList.add("hidden");
+            regrasIcon.src = "img/regras_logo.png";
+        }
     });
 
+
     classButton.addEventListener("click", () => {
-        classMenu.classList.toggle("hidden");
-        classIcon.src = classMenu.classList.contains("hidden") ? "img/classificacoes_logo.png" : "img/classificacoes_logo_2.png";
+        if (classMenu.classList.contains("hidden")) {
+            closeAllMenus();
+            classMenu.classList.remove("hidden");
+            classIcon.src = "img/classificacoes_logo_2.png";
+        } else {
+            classMenu.classList.add("hidden");
+            classIcon.src = "img/classificacoes_logo.png";
+        }
     });
+
 
     jogador.addEventListener("click", () => {
         jogador.classList.add("hidden");

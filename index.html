@@ -38,6 +38,15 @@
                     </form>
                 </div>
 
+                <div id="loggedMenu" class="logged-menu hidden">
+                    <div class="user-info">
+                        <img src="img/logged.png" alt="Utilizador" class="user-avatar">
+                        <span id="loggedUsername" class="username-text">Username</span>
+                    </div>
+                    <button id="logoutButton" class="button-sair">Terminar Sessão</button>
+                </div>
+
+
                 <!-- Botão Configurações -->
                 <button id="settingsButton" class="settings-button" title="Configurações">
                     <img src="img/settings_logo.png" alt="Settings Logo" id="settingsLogo" class="settings-logo">
@@ -100,6 +109,7 @@
                                 <li><strong>Tâb</strong> é um jogo de tabuleiro para dois jogadores.</li>
                                 <li>O tabuleiro tem <strong>4 linhas</strong>.</li>
                                 <li>O número de colunas é <strong>ímpar</strong>, entre <strong>7</strong> e <strong>15</strong> (tipicamente <strong>9</strong>).</li>
+                                <li>O jogador pode definir o nº de colunas nas <strong>Configurações</strong>.</li>
                                 </ul>
                             </div>
                         </section>
@@ -111,14 +121,14 @@
                             <div id="regra-2" class="regras-body" hidden>
                                 <ul>
                                 <li>Cada jogador tem <em>n</em> peças (igual ao número de colunas).</li>
-                                <li>O jogador usa uma cor distinta do adversário.</li>
+                                <li>Neste caso as peças do jogador são <strong>azuis</strong> e as do seu adversário são <strong>vermelhas</strong>.</li>
                                 </ul>
                             </div>
                         </section>
 
                         <section class="regras">
                             <button class="regras-head" aria-expanded="false" aria-controls="regra-3">
-                                Número e posição inicial
+                                Posição inicial
                             </button>
                             <div id="regra-3" class="regras-body" hidden>
                                 <ul>
@@ -158,23 +168,23 @@
 
                         <section class="regras">
                             <button class="regras-head" aria-expanded="false" aria-controls="regra-6">
-                                Lançamento (dado de paus)
+                                Dado de Paus
                             </button>
                             <div id="regra-6" class="regras-body" hidden>
                                 <ul>
-                                <li>Em vez de dado tradicional, usam-se <strong>4 paus</strong> com duas faces (clara/escura).</li>
+                                <li>Em vez do tradicional dado, usam-se <strong>4 paus</strong> com duas faces (clara/escura).</li>
                                 <li>Para lançar os dados, basta carregar no botão <strong>“Lançar Dados”</strong>.</li>
-                                <li>Conta-se quantos ficam com o <strong>lado claro</strong>: esse número é a <strong>soma</strong> (0–4).</li>
                                 </ul>
                             </div>
                         </section>
 
                         <section class="regras">
                             <button class="regras-head" aria-expanded="false" aria-controls="regra-7">
-                                Valores e repetição
+                                Valores do Dado de Paus
                             </button>
                             <div id="regra-7" class="regras-body" hidden>
-                                <p>A cada soma corresponde um <strong>valor de deslocamento</strong> e a possibilidade (ou não) de repetir:</p>
+                                <p>Contando quantos dados ficam com o lado claro para cima obtêm-se a <strong>soma</strong>.</p>
+                                <p>A cada soma corresponde um <strong>valor de deslocamento</strong>.</p>
                                 <table class="regras-table">
                                 <thead>
                                     <tr><th>Soma</th><th>Valor</th><th>Nome</th><th>Repete?</th><th>Prob.</th></tr>
@@ -233,9 +243,9 @@
                             </button>
                             <div id="regra-10" class="regras-body" hidden>
                                 <ul>
-                                <li><strong>Uma peça por casa</strong> (sem empilhar).</li>
+                                <li><strong>Uma peça por casa</strong>.</li>
                                 <li>Cada peça só pode entrar <strong>uma vez</strong> na <strong>4.ª fila</strong> (a de cima).</li>
-                                <li>Uma peça só se pode mover na 4.ª fila se <strong>não houver peças</strong> da sua cor na <strong>fila inicial</strong> (a de baixo).</li>
+                                <li>Uma peça só se pode mover na 4.ª fila se <strong>não houver peças</strong> da sua cor na <strong>1º fila</strong>.</li>
                                 <li>Uma peça <strong>não pode regressar</strong> à fila inicial do jogador.</li>
                                 </ul>
                             </div>
@@ -255,7 +265,7 @@
 
                         <section class="regras">
                             <button class="regras-head" aria-expanded="false" aria-controls="regra-12">
-                                Capturas
+                                Capturar peças
                             </button>
                             <div id="regra-12" class="regras-body" hidden>
                                 <ul>
