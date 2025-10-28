@@ -121,6 +121,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const style = document.createElement("style");
     style.textContent = `.tabuleiro div.hl{outline:3px solid #e6b97e;box-shadow:0 0 0 2px #2a1b10 inset;cursor:pointer;}`;
     document.head.appendChild(style);
+    
     function clearHighlights() {
         document.querySelectorAll(".tabuleiro div.hl").forEach(el => el.classList.remove("hl"));
     }
@@ -138,8 +139,39 @@ document.addEventListener("DOMContentLoaded", () => {
         board: []
     };
 
+    //volta ao ecrã de seleção de modo e reinicia o tabuleiro
+    function restartToModeSelection() {
+        jogador.classList.remove("hidden");
+        ia.classList.remove("hidden");
+        jogadorText.classList.add("hidden");
+        iaText.classList.add("hidden");
+        if (dadosWrap) dadosWrap.classList.add("hidden");
+
+        GameState.mode = "awaitRoll";
+        GameState.currentPlayer = "Azul";
+        GameState.selected = null;
+        GameState.dice = { sum: null, value: null, canRepeat: false };
+
+        initBoardState(GameState.cols);
+        renderBoard();
+        clearHighlights();
+
+        setMsg("Escolhe o modo de jogo (Jogador vs Jogador / IA).");
+        updateRollUI(); 
+    }
+
     GameState.vsAI = false;
     GameState.aiColorLabel = "Vermelho";
+    GameState.aiDifficulty = "Fácil";  // nível IA; default = Fácil
+
+    const nivelAISelect = document.querySelector(".nivelAI"); 
+    if (nivelAISelect) {
+        GameState.aiDifficulty = nivelAISelect.value || "Fácil";
+        nivelAISelect.addEventListener("change", () => {
+            GameState.aiDifficulty = nivelAISelect.value || "Fácil";
+            setMsg(`Nível da IA: ${GameState.aiDifficulty}`);
+        });
+    }
 
     document.getElementById("jogador")?.addEventListener("click", () => {
         GameState.vsAI = false;
@@ -152,12 +184,14 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     const AI_DELAY = { ROLL: 1200, PICK: 1500, BRANCH: 1500, CHAIN: 1000 };
+    
     function defer(fn, ms) { setTimeout(fn, ms); }
 
     function toView(r, c, player) {
         if (player === "Azul") return { vr: r, vc: c };
         return { vr: GameState.rows - 1 - r, vc: GameState.cols - 1 - c };
     }
+
     function fromView(vr, vc, player) {
         if (player === "Azul") return { r: vr, c: vc };
         return { r: GameState.rows - 1 - vr, c: GameState.cols - 1 - vc };
@@ -173,6 +207,11 @@ document.addEventListener("DOMContentLoaded", () => {
     function updateRollUI() {
         const btn = document.getElementById("baralharDados");
         if (!btn) return;
+        if (GameState.mode === "finished") {
+            btn.disabled = false;
+            btn.textContent = "Jogar de novo";
+            return;
+        }
         if (GameState.mode === "awaitRoll") {
             btn.disabled = false;
             btn.textContent = `Lançar Dados — ${GameState.currentPlayer}`;
@@ -182,7 +221,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // NOVO: direção para a serpentina (linhas 3 e 1 →; 2 e 0 ←)
     function dirForRow(r) { return (r === 3 || r === 1) ? +1 : -1; }
 
     function initialRow(owner) { return owner === "A" ? 3 : 0; }
@@ -208,6 +246,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const boardEl = document.getElementById("tabuleiro");
+
     function cellElView(vr, vc) {
         return document.querySelector(`.tabuleiro div[data-vr="${vr}"][data-vc="${vc}"]`);
     }
@@ -281,13 +320,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnDados = document.getElementById("baralharDados");
     if (btnDados) {
         btnDados.addEventListener("click", () => {
+            
+            if (GameState.mode === "finished") {
+                restartToModeSelection();
+                return;
+        }
             if (GameState.mode !== "awaitRoll") return;
             setTimeout(() => {
                 const d = lerLancamentoPaus();
                 GameState.dice = d;
                 GameState.mode = "awaitPiece";
                 GameState.selected = null;
-                setMsg(`Valor: ${d.value} ${d.canRepeat ? "(repete)" : ""} — escolhe uma peça ${GameState.currentPlayer}.`);
+                setMsg(`Valor: ${d.value} — escolhe uma peça ${GameState.currentPlayer}.`);
                 clearHighlights();
                 updateRollUI();
                 highlightMoveablePieces();
@@ -298,8 +342,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function meOwner(label) { return label === "Azul" ? "A" : "V"; }
 
-    // NOVO: “4.ª linha só mexe se a 1.ª da mesma cor estiver vazia”
+    // “4.ª linha só mexe se a 1.ª da mesma cor estiver vazia”
     function onFourthRow(r, owner) { return (owner === "A" && r === 0) || (owner === "V" && r === 3); }
+    
     function hasOwnInInitialRow(owner) {
         const row = initialRow(owner);
         return GameState.board[row].some(cell => cell && cell.owner === owner);
@@ -310,72 +355,72 @@ document.addEventListener("DOMContentLoaded", () => {
         const v = GameState.board[r][c];
         return v && v.owner === me;
     }
+
     function canLand(r, c) {
         const me = meOwner(GameState.currentPlayer);
         const v = GameState.board[r][c];
         return !v || v.owner !== me;
     }
 
-    // NOVO: caminho determinístico (sem saltos verticais e sem bifurcação)
     function possibleAdvanceFrom(r, c, steps) {
         const piece = GameState.board[r][c];
         if (!piece) return { r: null, c: null, needsChoice: false };
 
-        // 4.ª linha só mexe se a 1.ª da MESMA cor estiver vazia
         if (onFourthRow(r, piece.owner) && hasOwnInInitialRow(piece.owner)) {
             return { r: null, c: null, needsChoice: false };
         }
 
-        // 1.º movimento tem de ser 1 (Tâb)
         if (piece.stage === STAGE.NOT_MOVED && steps !== 1) {
             return { r: null, c: null, needsChoice: false };
         }
 
-        // 1.º movimento com 1: anda na horizontal; se estiver no fim, sobe uma linha
         if (piece.stage === STAGE.NOT_MOVED && steps === 1) {
             const d0 = dirForRow(r);
             const nc = c + d0;
             if (nc >= 0 && nc < GameState.cols && canLand(r, nc)) {
                 return { r, c: nc, needsChoice: false };
             }
-            const nr = (piece.owner === "A") ? r - 1 : r + 1; // Azul: 3→2 ; Vermelho: 0→1
+            const nr = (piece.owner === "A") ? r - 1 : r + 1; 
             if (nr >= 0 && nr < GameState.rows && canLand(nr, c)) {
                 return { r: nr, c, needsChoice: false };
             }
             return { r: null, c: null, needsChoice: false };
         }
 
-        // resto dos movimentos: serpentina com BIFURCAÇÃO ao sair da 3.ª linha (índice 1)
+        // Azul bifurca ao sair da linha absoluta 1 (para 0 ou 2)
+        // Vermelho bifurca ao sair da linha absoluta 2 (para 3 ou 1)
         let curR = r, curC = c, rem = steps;
 
         while (rem > 0) {
             const d = dirForRow(curR);
-            // tenta andar na horizontal
-            if (d === +1 && curC < GameState.cols - 1) { curC++; rem--; continue; }
-            if (d === -1 && curC > 0) { curC--; rem--; continue; }
 
-            // fim da fila → transição vertical consome 1 passo
+            if (d === +1 && curC < GameState.cols - 1) { curC++; rem--; continue; }
+            if (d === -1 && curC > 0)               { curC--; rem--; continue; }
+
             if (rem > 0) {
-                if (curR === 3) { // 1.ª linha (de baixo) sai para 2.ª (índice 2)
-                    curR = 2; rem--;
-                    continue;
-                }
-                if (curR === 2) { // 2.ª sai para 3.ª (índice 1)
-                    curR = 1; rem--;
-                    continue;
-                }
-                if (curR === 0) { // 4.ª volta para 3.ª (índice 1)
-                    curR = 1; rem--;
-                    continue;
-                }
-                if (curR === 1) { // 3.ª linha → BIFURCAÇÃO (4.ª OU 2.ª)
-                    // preparar opções; se já esteve na 4.ª, não pode subir novamente
-                    const up = (piece.stage === STAGE.HAS_BEEN_LAST) ? null : { r: 0, c: curC };
-                    const down = { r: 2, c: curC };
-                    const options = [];
-                    if (up) options.push(up);
-                    options.push(down);
-                    return { needsChoice: options.length > 1, options, remaining: rem - 1 };
+                if (curR === 3) { curR = 2; rem--; continue; }
+                if (curR === 0) { curR = 1; rem--; continue; }
+
+                if (piece.owner === "A") {
+                    if (curR === 2) { curR = 1; rem--; continue; }
+                    if (curR === 1) {
+                        const up   = (piece.stage === STAGE.HAS_BEEN_LAST) ? null : { r: 0, c: curC };
+                        const down = { r: 2, c: curC };
+                        const options = [];
+                        if (up) options.push(up);
+                        options.push(down);
+                        return { needsChoice: options.length > 1, options, remaining: rem - 1 };
+                    }
+                } else {
+                    if (curR === 1) { curR = 2; rem--; continue; }
+                    if (curR === 2) {
+                        const up   = (piece.stage === STAGE.HAS_BEEN_LAST) ? null : { r: 3, c: curC };
+                        const down = { r: 1, c: curC };
+                        const options = [];
+                        if (up) options.push(up);
+                        options.push(down);
+                        return { needsChoice: options.length > 1, options, remaining: rem - 1 };
+                    }
                 }
             }
         }
@@ -400,7 +445,6 @@ document.addEventListener("DOMContentLoaded", () => {
         return { r: curR, c: curC };
     }
 
-    // NOVO: coordenadas “de leitura” (filas 1..4 de baixo p/ cima; colunas 1..n nas filas 1/3, n..1 nas filas 2/4)
     function displayCoords(r, c) {
         const persp = getPerspectivePlayer();
         const { vr, vc } = toView(r, c, persp);
@@ -501,7 +545,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 const dest = possibleAdvanceFrom(r, c, GameState.dice.value);
 
-            
                 if (dest.needsChoice || (dest.r != null && canLand(dest.r, dest.c))) {
                     cells.push({ r, c });
                 }
@@ -527,6 +570,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     // IA
+    function progressHeuristic(ownerChar, from, to) {
+        const rowScore = ownerChar === "A" ? (3 - to.r) : (to.r - 0); // [0..3]
+        const d = dirForRow(from.r);
+        const horizGain = (to.r === from.r) ? ((to.c - from.c) * d) : 0; 
+        const branchBonus = (from.r === 1 && to.r !== from.r) ? 0.5 : 0;
+        return rowScore * 100 + horizGain * 5 + branchBonus;
+    }
+
     function enumerateMovesFrom(r, c, steps, playerLabel) {
         const piece = GameState.board[r][c];
         const moves = [];
@@ -536,7 +587,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (onFourthRow(r, me) && hasOwnInInitialRow(me)) return moves;
 
-        // 1.º movimento: só a peça da frente e dado = 1
         if (piece.stage === STAGE.NOT_MOVED) {
             if (!isFrontOfStartRow(r, c)) return moves;
             if (steps !== 1) return moves;
@@ -544,13 +594,11 @@ document.addEventListener("DOMContentLoaded", () => {
             const d = dirForRow(r);
             const nc = c + d;
 
-            // na mesma linha
             if (nc >= 0 && nc < GameState.cols && canLand(r, nc)) {
                 const cap = !!(GameState.board[r][nc] && GameState.board[r][nc].owner !== me);
                 moves.push({ from: { r, c }, to: { r, c: nc }, capture: cap });
                 return moves;
             }
-            // no fim da linha → sobe uma linha
             const nr = (piece.owner === "A") ? r - 1 : r + 1;
             if (nr >= 0 && nr < GameState.rows && canLand(nr, c)) {
                 const cap = !!(GameState.board[nr][c] && GameState.board[nr][c].owner !== me);
@@ -559,7 +607,6 @@ document.addEventListener("DOMContentLoaded", () => {
             return moves;
         }
 
-        // sonda o destino: pode devolver bifurcação na 3.ª linha
         const probe = possibleAdvanceFrom(r, c, steps);
         if (probe.needsChoice) {
             for (const opt of probe.options) {
@@ -579,8 +626,6 @@ document.addEventListener("DOMContentLoaded", () => {
         return moves;
     }
 
-
-
     function getValidMovesFor(playerLabel, steps) {
         const out = [];
         for (let r = 0; r < GameState.rows; r++) {
@@ -593,11 +638,33 @@ document.addEventListener("DOMContentLoaded", () => {
         return out;
     }
 
-    function aiPickMove(moves) {
+    // seleção de jogada consoante a dificuldade
+    // Fácil: NÃO capturar (evita capturas; só captura se não houver outra jogada)
+    // Médio: jogada aleatória válida
+    // Difícil: prioriza SEMPRE capturas; se não houver, escolhe a de maior progresso
+    function aiPickMove(moves, difficulty) {
         if (!moves.length) return null;
+
+        if (difficulty === "Fácil") {
+            const naoCapturas = moves.filter(m => !m.capture);
+            const pool = naoCapturas.length ? naoCapturas : moves; // se não houver alternativa, aceita capturar
+            return pool[Math.floor(Math.random() * pool.length)];
+        }
+
+        if (difficulty === "Médio") {
+            return moves[Math.floor(Math.random() * moves.length)];
+        }
+
+        // Difícil
         const caps = moves.filter(m => m.capture);
-        if (caps.length) return caps[Math.floor(Math.random() * caps.length)];
-        return moves[Math.floor(Math.random() * moves.length)];
+        if (caps.length) {
+            // desempata por melhor progresso
+            caps.sort((a, b) => (b.progress ?? 0) - (a.progress ?? 0));
+            return caps[0];
+        }
+        // sem capturas: escolhe a jogada de maior progresso
+        const sorted = [...moves].sort((a, b) => (b.progress ?? 0) - (a.progress ?? 0));
+        return sorted[0];
     }
 
     function isAITurn() {
@@ -636,7 +703,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            const move = aiPickMove(moves);
+            const move = aiPickMove(moves, GameState.aiDifficulty);
             applyMove(move.from, move.to);
             if (checkWin()) return;
             GameState.selected = null;
@@ -658,17 +725,59 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
+        function nextRowForOwner(ownerChar, curR) {
+            if (ownerChar === "A") {
+                // Azul: 3 -> 2 -> 1 -> 0 -> 1 -> 2 -> 3 ...
+                if (curR === 3) return 2;
+                if (curR === 2) return 1;
+                if (curR === 1) return 0;
+                if (curR === 0) return 1;
+            } else {
+                // Vermelho: 0 -> 1 -> 2 -> 3 -> 2 -> 1 -> 0 ...
+                if (curR === 0) return 1;
+                if (curR === 1) return 2;
+                if (curR === 2) return 3;
+                if (curR === 3) return 2;
+            }
+            return curR;
+        }
+        function walkStepsOwner(ownerChar, startR, startC, rem) {
+            let curR = startR, curC = startC, steps = rem;
+            while (steps > 0) {
+                const d = dirForRow(curR);
+                const canRight = (d === +1 && curC < GameState.cols - 1);
+                const canLeft  = (d === -1 && curC > 0);
+
+                if ((d === +1 && canRight) || (d === -1 && canLeft)) {
+                    curC += d;
+                    continue;
+                }
+                if (steps > 0) {
+                    const nr = nextRowForOwner(ownerChar, curR);
+                    curR = nr;
+                    steps--;
+                }
+            }
+            return { r: curR, c: curC };
+        }
+        function fixBranchOptionsForOwner(ownerChar, options) {
+            if (ownerChar === "A") return options; 
+            return options.map(o => {
+                if (o.r === 0) return { r: 3, c: o.c };
+                if (o.r === 2) return { r: 1, c: o.c };
+                return o;
+            });
+        }
+
         if (GameState.mode === "awaitPiece") {
             if (!isOwnPiece(r, c)) { setMsg("Escolhe uma peça tua."); return; }
             const piece = GameState.board[r][c];
 
-            // 4.ª linha bloqueada se a 1.ª da mesma cor tiver peças
             if (onFourthRow(r, piece.owner) && hasOwnInInitialRow(piece.owner)) {
                 setMsg("Na 4.ª linha só mexe se a 1.ª da tua cor estiver vazia.");
                 return;
             }
 
-            // 1.º movimento: só a peça da frente e com 1 (Tâb)
             if (piece.stage === STAGE.NOT_MOVED && !isFrontOfStartRow(r, c)) {
                 setMsg("Na fila inicial só podes mexer a peça da frente (à direita).");
                 return;
@@ -678,20 +787,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            // calcula destino (pode devolver bifurcação ao sair da 3.ª linha)
             const dest = possibleAdvanceFrom(r, c, GameState.dice.value);
 
             if (dest.needsChoice) {
                 GameState.mode = "awaitDestination";
-                GameState.selected = { r, c, remaining: dest.remaining };
 
-                // realça as duas casas de escolha (4.ª ou 2.ª), respeitando “já esteve na 4.ª”
-                const pieceHere = GameState.board[r][c];
-                const options = [];
-                if (pieceHere.stage !== STAGE.HAS_BEEN_LAST) options.push({ r: 0, c }); // subir para 4.ª
-                options.push({ r: 2, c });                                             // descer para 2.ª
+                const fixedOpts = fixBranchOptionsForOwner(piece.owner, dest.options);
 
-                const optsView = options.map(o => toView(o.r, o.c, persp));
+                GameState.selected = { r, c, remaining: dest.remaining, options: fixedOpts };
+
+                const optsView = fixedOpts.map(o => toView(o.r, o.c, persp));
                 clearHighlights();
                 optsView.forEach(({ vr, vc }) => {
                     const el = cellElView(vr, vc);
@@ -702,7 +807,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            // jogada direta (sem bifurcação)
             if (dest.r == null || !canLand(dest.r, dest.c)) {
                 setMsg("Jogada inválida.");
                 return;
@@ -714,17 +818,15 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        // >>> ADICIONAR ESTE BLOCO PARA A BIFURCAÇÃO <<<
+        // --- Escolha após bifurcação (sair da 3.ª linha) ---
         if (GameState.mode === "awaitDestination") {
             const from = GameState.selected;
             if (!from) { GameState.mode = "awaitPiece"; return; }
 
             const piece = GameState.board[from.r][from.c];
+            const ownerChar = piece?.owner || "A";
 
-            // opções válidas ao sair da 3.ª linha: 4.ª (se nunca lá esteve) ou 2.ª
-            const options = [];
-            if (piece.stage !== STAGE.HAS_BEEN_LAST) options.push({ r: 0, c: from.c }); // subir
-            options.push({ r: 2, c: from.c });                                          // descer
+            const options = Array.isArray(from.options) ? from.options : [];
 
             const clickedModel = fromView(vr, vc, persp);
             const picked = options.find(o => o.r === clickedModel.r && o.c === clickedModel.c);
@@ -737,8 +839,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            // continuar os passos restantes depois da escolha
-            const end = walkSteps(picked.r, picked.c, from.remaining);
+            const end = walkStepsOwner(ownerChar, picked.r, picked.c, from.remaining);
             if (!canLand(end.r, end.c)) {
                 setMsg("Destino inválido.");
                 const optsView = options.map(o => toView(o.r, o.c, persp));
