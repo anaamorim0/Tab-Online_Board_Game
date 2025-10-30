@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <meta charset="UTF-8">
+        <meta charset="utf-8">
         <title>Tâb Game</title>
         <link rel="stylesheet" href="style.css" type="text/css">
     </head>
@@ -88,7 +88,21 @@
                 </button>
 
                 <!-- Menu Classificações -->
-                <div id="classMenu" class="class-menu hidden"></div>
+                <div id="classMenu" class="class-menu hidden">
+                    <h3 class="titulo-class">Classificações</h3>
+                    <table id="classTable">
+                        <thead>
+                        <tr>
+                            <th>Data/Hora</th>
+                            <th>Tamanho</th>
+                            <th>Nível IA</th>
+                            <th>Vencedor</th>
+                            <th>Nº de jogadas</th>
+                        </tr>
+                        </thead>
+                        <tbody id="classTbody"></tbody>
+                    </table>
+                </div>
             
 
                 <!-- Botão Regras -->
@@ -332,6 +346,10 @@
                         Lançar Dados
                     </button>
                 </div>
+
+                <button id="desistirButton" class="desistir-button hidden">
+                    Desistir do Jogo
+                </button>
 
 
                 <!-- Tabuleiro -->

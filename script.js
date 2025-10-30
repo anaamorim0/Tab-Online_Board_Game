@@ -16,6 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const classButton = document.getElementById("classButton");
     const classMenu = document.getElementById("classMenu");
     const voltarButton = document.getElementById("voltarButton");
+    const desistirButton = document.getElementById("desistirButton");
 
     const settingsIcon = settingsButton.querySelector("img");
     const loginIcon = userButton.querySelector("img");
@@ -64,6 +65,15 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    if (desistirButton) {
+        desistirButton.addEventListener("click", () => {
+            // Quando o jogador desiste, volta ao ecrã inicial
+            restartToModeSelection();
+            desistirButton.classList.add("hidden");
+        });
+    }
+
+
     regrasButton.addEventListener("click", () => {
         if (regrasMenu.classList.contains("hidden")) {
             closeAllMenus();
@@ -86,27 +96,58 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    
+
     jogador.addEventListener("click", () => {
         jogador.classList.add("hidden");
         ia.classList.add("hidden");
         jogadorText.classList.remove("hidden");
         dadosWrap.classList.remove("hidden");
-        GameState.vsAI = false;
+        if (desistirButton) desistirButton.classList.remove("hidden");
+
+        GameState.inGame = true;
+        GameState.stats.startTime = Date.now();
+        GameState.stats.moves = 0;
+        GameState.vsAI = false;                // <-- definir antes da mensagem
+        toggleMsgPanel(true);                  // <-- garantir que o painel aparece
+
+        announceAwaitRoll(GameState.currentPlayer);
         renderBoard();
         updateRollUI();
     });
+
 
     ia.addEventListener("click", () => {
         jogador.classList.add("hidden");
         ia.classList.add("hidden");
         iaText.classList.remove("hidden");
         dadosWrap.classList.remove("hidden");
-        GameState.vsAI = true;                // IA ligada
-        GameState.aiColorLabel = "Vermelho";  // IA é sempre Vermelho
+        desistirButton.classList.remove("hidden");
+
+        // 1) Estado primeiro
+        GameState.inGame = true;
+        GameState.stats.startTime = Date.now();
+        GameState.stats.moves = 0;
+        GameState.vsAI = true;                 // IA ligada
+        GameState.aiColorLabel = "Vermelho";   // IA é sempre Vermelho
+        GameState.currentPlayer = getFirstPlayer(); // <-- corrigido!
+
+        // 2) Mostrar painel de mensagens
+        toggleMsgPanel(true);
+
+        // 3) Desenhar UI
         renderBoard();
         updateRollUI();
-        defer(aiMaybeAct, AI_DELAY.ROLL);     // se for a vez da IA ela começa
+
+        // 4) Mensagem de arranque correta
+        if (GameState.currentPlayer === GameState.aiColorLabel) {
+            setMsg("A IA vai lançar os dados...");
+            defer(aiMaybeAct, AI_DELAY.ROLL);
+        } else {
+            setMsg('Carregue em "Lançar Dados".');
+        }
     });
+
 
     function baralharDados() {
         document.querySelectorAll(".dado").forEach(dado => {
@@ -116,13 +157,24 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    function resetDiceVisual() {
+        document.querySelectorAll(".dado").forEach(d => {
+            d.classList.remove("up");
+            d.classList.add("down");
+        });
+    }
+
+    
+
     function initDados() {
-        baralharDados();
+        resetDiceVisual();
         const botao = document.getElementById("baralharDados");
         if (botao) botao.addEventListener("click", baralharDados);
     }
 
     window.addEventListener("DOMContentLoaded", initDados);
+
+
 
     (function () {
         const container = document.getElementById("regrasContent");
@@ -153,17 +205,80 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     })();
 
+    // --- Painel de mensagens (canto inferior esquerdo) ---
     let statusEl = document.getElementById("statusMsg");
     if (!statusEl) {
+        // cria (ou reutiliza) o painel
+        let panel = document.getElementById("msgPanel");
+        if (!panel) {
+            panel = document.createElement("div");
+            panel.id = "msgPanel";
+            document.body.appendChild(panel);
+        }
+
         statusEl = document.createElement("div");
         statusEl.id = "statusMsg";
-        statusEl.style.marginTop = "8px";
-        statusEl.style.color = "#f2e7c8";
-        statusEl.style.fontWeight = "bold";
-        const wrap = document.getElementById("dadosWrap");
-        if (wrap) wrap.appendChild(statusEl);
+        panel.appendChild(statusEl);
+        toggleMsgPanel(false);
+
     }
-    function setMsg(t) { statusEl.textContent = t; }
+
+    // mantém a tua função como está, só sem estilos inline
+    function setMsg(t, { force = false } = {}) {
+        const msgEl = document.getElementById("statusMsg");
+        if (!msgEl) return;
+
+        // Sem jogo a decorrer → silêncio
+        if (!GameState.inGame && !force) {
+            msgEl.textContent = "";
+            return;
+        }
+
+        // Nunca mostrar só o cabeçalho
+        if (!t) return;
+
+        const isAIturn = GameState.vsAI && GameState.currentPlayer === GameState.aiColorLabel;
+        const header = isAIturn ? "É a vez da IA jogar." : "É a sua vez de jogar.";
+        msgEl.textContent = `${header}\n${t}`;
+    }
+
+
+    function toggleMsgPanel(show) {
+        document.getElementById("msgPanel")?.classList.toggle("hidden", !show);
+    }
+
+
+    // Quem joga agora?
+    function isAITurnNow() {
+        return GameState.vsAI && GameState.currentPlayer === GameState.aiColorLabel;
+    }
+
+        // Texto genérico "é a sua vez / é a vez da IA"
+    function turnHeaderFor(playerLabel = GameState.currentPlayer) {
+        const isAI = GameState.vsAI && playerLabel === GameState.aiColorLabel;
+        return isAI ? "É a vez da IA jogar.\n" : "É a sua vez de jogar.\n";
+    }
+
+        // Mensagem quando estamos à espera do lançamento
+    function announceAwaitRoll(playerLabel = GameState.currentPlayer) {
+        const isAI = GameState.vsAI && playerLabel === GameState.aiColorLabel;
+        const body = isAI ? "A IA vai lançar os dados..." : "Carregue em \"Lançar Dados\".";
+        setMsg(body);
+    }
+
+
+    function buildRollMsg(value, isAI, canRepeat) {
+        const header = `Saiu ${value}\n`;
+        if (isAI) {
+            return `${header}\n- A IA lançou os dados.\n- A IA vai escolher uma peça e uma casa...`;
+        }
+        const repeatNote = canRepeat
+            ? `\n- Como tirou 1, 4 ou 6, pode voltar a lançar no fim da sua jogada.`
+            : "";
+        return `${header}\n- Escolha uma peça para jogar.${repeatNote}`;
+    }
+
+
 
     const style = document.createElement("style");
     style.textContent = `.tabuleiro div.hl{outline:3px solid #e6b97e;box-shadow:0 0 0 2px #2a1b10 inset;cursor:pointer;}`;
@@ -186,8 +301,70 @@ document.addEventListener("DOMContentLoaded", () => {
         board: [],
         vsAI: false,
         aiColorLabel: "Vermelho",
-        aiDifficulty: "Fácil"
+        aiDifficulty: "Fácil",
+        mustPass: false,     // ← novo: estamos num turno sem jogadas possíveis
+        nextPlayer: null, 
+        inGame: false,
+        aiTimer: null,
+        isRolling: false,
+        stats: { startTime: null, moves: 0 }  
     };
+
+    // helper (mete isto perto do defer)
+    function scheduleAI(ms) {
+        if (!GameState.vsAI) return;
+        if (GameState.aiTimer) clearTimeout(GameState.aiTimer);
+        GameState.aiTimer = setTimeout(() => {
+            GameState.aiTimer = null;
+            aiMaybeAct();
+        }, ms);
+    }
+
+    // ---- Classificações (persistência + UI) ----
+    const CLASS_KEY = "tabJogo_classificacoes_v1";
+
+    const Classif = {
+    list: [],
+    load() {
+        try {
+        const raw = localStorage.getItem(CLASS_KEY);
+        this.list = raw ? JSON.parse(raw) : [];
+        } catch {
+        this.list = [];
+        }
+    },
+    save() {
+        localStorage.setItem(CLASS_KEY, JSON.stringify(this.list));
+    },
+    add(entry) {
+        // entrada mais recente no topo
+        this.list.unshift(entry);
+        this.save();
+        this.render();
+    },
+    render() {
+        const tbody = document.getElementById("classTbody");
+        if (!tbody) return;
+        tbody.innerHTML = "";
+        this.list.forEach(row => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${row.datetime}</td>
+            <td>${row.boardSize}</td>
+            <td>${row.aiLevel}</td>
+            <td>${row.winner}</td>
+            <td>${row.moves}</td>
+        `;
+        tbody.appendChild(tr);
+        });
+    }
+    };
+
+    // Carrega e desenha ao arrancar
+    Classif.load();
+    requestAnimationFrame(() => Classif.render());
+
+
 
     //volta ao ecrã de seleção de modo e reinicia o tabuleiro
     function restartToModeSelection() {
@@ -197,16 +374,22 @@ document.addEventListener("DOMContentLoaded", () => {
         iaText.classList.add("hidden");
         if (dadosWrap) dadosWrap.classList.add("hidden");
 
+        GameState.inGame = false;
+        toggleMsgPanel(false);
         GameState.mode = "awaitRoll";
         GameState.currentPlayer = "Azul";
         GameState.selected = null;
         GameState.dice = { sum: null, value: null, canRepeat: false };
+        GameState.mustPass = false;
+        GameState.nextPlayer = null;
+        GameState.stats.startTime = null;
+        GameState.stats.moves = 0;
 
+
+        resetDiceVisual();
         initBoardState(GameState.cols);
         renderBoard();
         clearHighlights();
-
-        setMsg("Escolhe o modo de jogo (Jogador vs Jogador / IA).");
         updateRollUI();
     }
 
@@ -227,9 +410,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     firstPlayerSelect?.addEventListener("change", () => {
         GameState.currentPlayer = getFirstPlayer();
+        if (!GameState.inGame) return;
         if (GameState.mode === "awaitRoll" || GameState.mode === "finished") {
             renderBoard();
-            setMsg(`Vez de ${GameState.currentPlayer}. Carrega em Lançar Dados.`);
+            announceAwaitRoll(GameState.currentPlayer);
             updateRollUI();
             if (GameState.vsAI && GameState.currentPlayer === GameState.aiColorLabel && GameState.mode === "awaitRoll") {
                 defer(aiMaybeAct, AI_DELAY.ROLL);
@@ -237,7 +421,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    const AI_DELAY = { ROLL: 1200, PICK: 1500, BRANCH: 1500, CHAIN: 1000 };
+    const AI_DELAY = { ROLL: 1800, PICK: 3500, BRANCH: 2200, CHAIN: 1800 };
     function defer(fn, ms) { setTimeout(fn, ms); }
 
     function toView(r, c, player) {
@@ -247,8 +431,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Em vs IA a perspetiva é SEMPRE Azul (humano). PvP mantém a rotação por jogador.
     function getPerspectivePlayer() {
-        if (GameState.vsAI) return "Azul";
-        return GameState.currentPlayer;
+        return "Azul";
     }
 
     function fromView(vr, vc, player) {
@@ -259,19 +442,46 @@ document.addEventListener("DOMContentLoaded", () => {
     function updateRollUI() {
         const btn = document.getElementById("baralharDados");
         if (!btn) return;
+
+        // 1) Fim do jogo → mostra sempre "Jogar de novo"
         if (GameState.mode === "finished") {
+            btn.style.display = "";
             btn.disabled = false;
             btn.textContent = "Jogar de novo";
             return;
         }
-        if (GameState.mode === "awaitRoll") {
-            btn.disabled = false;
-            btn.textContent = `Lançar Dados — ${GameState.currentPlayer}`;
-        } else {
-            btn.disabled = true;
-            btn.textContent = `Lançar Dados`;
+
+        // 2) Se for a vez da IA, esconde e sai já (evita flicker)
+        const aiTurn = GameState.vsAI && GameState.currentPlayer === GameState.aiColorLabel;
+        if (aiTurn) {
+            btn.style.display = "none";
+            return;
         }
+
+        // 3) Caso "Passar a vez"
+        // 3) Caso "Passar a vez" OU "Relançar"
+        if (GameState.mustPass) {
+            btn.style.display = "";
+            btn.disabled = false;
+            btn.textContent = (GameState.nextPlayer === GameState.currentPlayer)
+                ? "Lançar Dados"
+                : "Passar a vez";
+            return;
+        }
+
+
+        // 4) Jogador humano e à espera de lançamento
+        if (GameState.mode === "awaitRoll") {
+            btn.style.display = "";
+            btn.disabled = false;
+            btn.textContent = "Lançar Dados";
+            return;
+        }
+
+        // 5) Outros modos → esconder
+        btn.style.display = "none";
     }
+
 
     function dirForRow(r) { return (r === 3 || r === 1) ? +1 : -1; }
     function initialRow(owner) { return owner === "A" ? 3 : 0; }
@@ -347,10 +557,18 @@ document.addEventListener("DOMContentLoaded", () => {
         GameState.mode = "awaitRoll";
         GameState.selected = null;
         GameState.dice = { sum: null, value: null, canRepeat: false };
-        setMsg("Carrega em Lançar Dados para começar.");
+        if (GameState.inGame) {
+            announceAwaitRoll(GameState.currentPlayer);
+            if (GameState.vsAI && GameState.currentPlayer === GameState.aiColorLabel) {
+                defer(aiMaybeAct, AI_DELAY.ROLL);
+            }
+            } else {
+            setMsg(""); // ainda não escolheste modo
+        }
+
+        resetDiceVisual();
         clearHighlights();
         updateRollUI();
-        defer(aiMaybeAct, AI_DELAY.ROLL);
     }
 
     const sizeSelect = document.getElementById("sizeSelect");
@@ -376,19 +594,47 @@ document.addEventListener("DOMContentLoaded", () => {
                 restartToModeSelection();
                 return;
             }
-            if (GameState.mode !== "awaitRoll") return;
+
+            // Já a lançar? Ignora.
+            if (GameState.isRolling) return;
+
+            // "Passar a vez" / "Relançar" sem lançar dados
+            if (GameState.mode === "awaitRoll" && GameState.mustPass) {
+                GameState.mustPass = false;
+                GameState.currentPlayer = GameState.nextPlayer || GameState.currentPlayer;
+                GameState.nextPlayer = null;
+                announceAwaitRoll(GameState.currentPlayer);
+                updateRollUI();
+                scheduleAI(AI_DELAY.CHAIN);
+                return;
+            }
+
+            // Lançamento real
+            GameState.isRolling = true;
             setTimeout(() => {
                 const d = lerLancamentoPaus();
                 GameState.dice = d;
                 GameState.mode = "awaitPiece";
                 GameState.selected = null;
-                setMsg(`Valor: ${d.value} — escolhe uma peça ${GameState.currentPlayer}.`);
+
+                let msg = `Saiu ${d.value}.\n`;
+                msg += (GameState.vsAI && GameState.currentPlayer === GameState.aiColorLabel)
+                ? "A IA vai escolher uma peça para jogar."
+                : "Escolha uma peça para jogar.";
+
+                if (d.canRepeat) msg += `\nComo saiu ${d.value} pode voltar a lançar os dados.\n`;
+
+                setMsg(msg);
                 clearHighlights();
                 updateRollUI();
                 highlightMoveablePieces();
-                defer(aiMaybeAct, AI_DELAY.PICK);
+
+                GameState.isRolling = false;
+                // Se for IA, o próximo passo (escolha de peça) é agendado aqui
+                scheduleAI(AI_DELAY.PICK);
             }, 0);
         });
+
     }
 
     function meOwner(label) { return label === "Azul" ? "A" : "V"; }
@@ -516,6 +762,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         renderBoard();
+        GameState.stats.moves += 1;
 
         const a = displayCoords(from.r, from.c);
         const b = displayCoords(to.r, to.c);
@@ -543,6 +790,21 @@ document.addEventListener("DOMContentLoaded", () => {
             clearHighlights();
             GameState.dice = { sum: null, value: null, canRepeat: false };
             updateRollUI();
+            // Registar classificação
+            try {
+                const when = new Date();
+                const dt = when.toLocaleString(); // Data/Hora local
+                Classif.add({
+                    datetime: dt,
+                    boardSize: `${GameState.cols}x${GameState.rows}`,
+                    aiLevel: GameState.vsAI ? (GameState.aiDifficulty || "-") : "PvP",
+                    winner: winner,
+                    moves: GameState.stats.moves
+                });
+                } catch (e) {
+                // silencioso; não queremos quebrar o jogo por causa da tabela
+            }
+
             return true;
         }
         return false;
@@ -553,18 +815,21 @@ document.addEventListener("DOMContentLoaded", () => {
         GameState.dice = { sum: null, value: null, canRepeat: false };
         if (repeated) {
             GameState.mode = "awaitRoll";
-            setMsg(`Tiraste 1, 4 ou 6. Lança novamente (${GameState.currentPlayer}).`);
+            announceAwaitRoll(GameState.currentPlayer);
             clearHighlights();
             renderBoard();
         } else {
             GameState.currentPlayer = (GameState.currentPlayer === "Azul") ? "Vermelho" : "Azul";
             GameState.mode = "awaitRoll";
-            setMsg(`Vez de ${GameState.currentPlayer}. Carrega em Lançar Dados.`);
+            announceAwaitRoll(GameState.currentPlayer);
             clearHighlights();
             renderBoard();
         }
+       
+
         updateRollUI();
-        defer(aiMaybeAct, AI_DELAY.CHAIN);
+        scheduleAI(AI_DELAY.CHAIN);
+
     }
 
     function highlightCells(modelCells) {
@@ -599,19 +864,50 @@ document.addEventListener("DOMContentLoaded", () => {
         highlightCells(cells);
 
         if (cells.length === 0) {
+            GameState.mustPass = true;
+
+            const isAI = GameState.vsAI && GameState.currentPlayer === GameState.aiColorLabel;
+            const v = GameState.dice.value;
+
             if (GameState.dice.canRepeat) {
-                setMsg(`Sem jogada válida com ${GameState.dice.value}. Lança novamente.`);
-                GameState.mode = "awaitRoll";
+                // Mantém o mesmo jogador para relançar
+                GameState.nextPlayer = GameState.currentPlayer;
+                setMsg(
+                `Saiu ${v}.\n` +
+                `Não é uma jogada válida.\n` +
+                `Como saiu ${v}, ${isAI ? "a IA" : "lança"} de novo o dado.`
+                );
             } else {
-                setMsg("Sem jogada válida. Passa a vez.");
-                GameState.currentPlayer = (GameState.currentPlayer === "Azul") ? "Vermelho" : "Azul";
-                GameState.mode = "awaitRoll";
+                // Passa a vez para o outro
+                GameState.nextPlayer = (GameState.currentPlayer === "Azul") ? "Vermelho" : "Azul";
+                setMsg(
+                `Saiu ${v}.\n` +
+                `Não é uma jogada válida.\n` +
+                `${isAI ? "A IA passa a vez." : "Clique em 'Passar a vez'."}`
+                );
             }
+
+            GameState.mode = "awaitRoll";
             GameState.dice = { sum: null, value: null, canRepeat: false };
             clearHighlights();
             renderBoard();
             updateRollUI();
+
+            // 🔧 Agenda imediatamente o próximo passo da IA
+            if (isAI) {
+                if (GameState.nextPlayer === GameState.currentPlayer) {
+                // IA vai relançar
+                scheduleAI(AI_DELAY.ROLL);
+                } else {
+                // IA passa a vez e o humano entra
+                scheduleAI(AI_DELAY.CHAIN);
+                }
+            }
+            return;
         }
+
+
+
     }
 
     function progressHeuristic(ownerChar, from, to) {
@@ -712,11 +1008,26 @@ document.addEventListener("DOMContentLoaded", () => {
     function aiMaybeAct() {
         if (!isAITurn()) return;
 
+        // Se ainda estiver a "rolar", aguarda um pouco
+        if (GameState.isRolling) {
+            scheduleAI(300);
+            return;
+        }
+
         if (GameState.mode === "awaitRoll") {
+            if (GameState.mustPass) {
+            // "Passar" ou "Relançar" é tratado via botão → simula o clique
+            const btn = document.getElementById("baralharDados");
+            if (btn && !btn.disabled) btn.click();
+            // o handler do botão já agenda o próximo passo
+            return;
+            }
+            // Lançar dados (simula clique no botão)
             const btn = document.getElementById("baralharDados");
             if (btn && !btn.disabled) {
-                btn.click();
-                defer(aiMaybeAct, AI_DELAY.PICK);
+            btn.click(); // o handler agenda o PICK
+            } else {
+            scheduleAI(300);
             }
             return;
         }
@@ -725,20 +1036,38 @@ document.addEventListener("DOMContentLoaded", () => {
             const d = GameState.dice.value;
             const moves = getValidMovesFor(GameState.currentPlayer, d);
             if (!moves.length) {
-                if (GameState.dice.canRepeat) {
-                    setMsg(`Sem jogada válida com ${d}. Lança novamente.`);
-                    GameState.mode = "awaitRoll";
-                } else {
-                    setMsg("Sem jogada válida. Passa a vez.");
-                    GameState.currentPlayer = (GameState.currentPlayer === "Azul") ? "Vermelho" : "Azul";
-                    GameState.mode = "awaitRoll";
-                }
+            const v = d;
+            if (GameState.dice.canRepeat) {
+                setMsg(
+                `Saiu ${v}.\n` +
+                `Não é uma jogada válida.\n` +
+                `Como saiu ${v}, a IA lança de novo o dado.`
+                );
+                // mantém o mesmo jogador para relançar
+                GameState.mode = "awaitRoll";
+                GameState.mustPass = true;
+                GameState.nextPlayer = GameState.currentPlayer;
                 GameState.dice = { sum: null, value: null, canRepeat: false };
                 clearHighlights();
                 renderBoard();
                 updateRollUI();
-                defer(aiMaybeAct, AI_DELAY.BRANCH);
-                return;
+                scheduleAI(AI_DELAY.ROLL);
+            } else {
+                setMsg(
+                `Saiu ${v}.\n` +
+                `Não é uma jogada válida.\n` +
+                `A IA passa a vez.`
+                );
+                GameState.mode = "awaitRoll";
+                GameState.mustPass = true;
+                GameState.nextPlayer = (GameState.currentPlayer === "Azul") ? "Vermelho" : "Azul";
+                GameState.dice = { sum: null, value: null, canRepeat: false };
+                clearHighlights();
+                renderBoard();
+                updateRollUI();
+                scheduleAI(AI_DELAY.CHAIN);
+            }
+            return;
             }
 
             const move = aiPickMove(moves, GameState.aiDifficulty);
@@ -749,6 +1078,7 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
     }
+
 
     function onCellClick(e) {
         const vr = parseInt(e.currentTarget.dataset.vr, 10);
@@ -835,9 +1165,24 @@ document.addEventListener("DOMContentLoaded", () => {
                 const fixedOpts = fixBranchOptionsForOwner(piece.owner, dest.options);
                 GameState.selected = { r, c, remaining: dest.remaining, options: fixedOpts };
 
-                const optsView = fixedOpts.map(o => toView(o.r, o.c, persp));
+                // 👉 calcular o DESTINO FINAL de cada ramificação (depois de gastar 'remaining')
+                const endsResolved = fixedOpts
+                    .map(o => ({ end: walkStepsOwner(piece.owner, o.r, o.c, dest.remaining) }))
+                    .filter(p => canLand(p.end.r, p.end.c)); // só destinos pousáveis
+
+                // se por acaso nenhuma ramificação tiver destino válido, aborta
+                if (endsResolved.length === 0) {
+                    setMsg("Jogada inválida.");
+                    GameState.mode = "awaitPiece";
+                    clearHighlights();
+                    highlightMoveablePieces();
+                    return;
+                }
+
+                // 👉 destacar as casas de DESTINO FINAL (não as de entrada)
+                const endsView = endsResolved.map(p => toView(p.end.r, p.end.c, persp));
                 clearHighlights();
-                optsView.forEach(({ vr, vc }) => {
+                endsView.forEach(({ vr, vc }) => {
                     const el = cellElView(vr, vc);
                     if (el) el.classList.add("hl");
                 });
@@ -845,6 +1190,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 setMsg("Estás na 3.ª linha: escolhe o destino (4.ª ou 2.ª).");
                 return;
             }
+
 
             if (dest.r == null || !canLand(dest.r, dest.c)) {
                 setMsg("Jogada inválida.");
@@ -877,22 +1223,31 @@ document.addEventListener("DOMContentLoaded", () => {
             const options = Array.isArray(from.options) ? from.options : [];
 
             const clickedModel = fromView(vr, vc, persp);
-            const picked = options.find(o => o.r === clickedModel.r && o.c === clickedModel.c);
+
+            // 👉 resolver os DESTINOS FINAIS de cada opção com o remaining guardado
+            const resolved = options.map(o => ({
+                entry: o,
+                end: walkStepsOwner(ownerChar, o.r, o.c, from.remaining)
+            }));
+
+            // 👉 agora escolhemos pela casa de DESTINO FINAL
+            const picked = resolved.find(p => p.end.r === clickedModel.r && p.end.c === clickedModel.c);
 
             if (!picked) {
                 setMsg("Clica numa das casas destacadas ou clica na peça para cancelar.");
-                const optsView = options.map(o => toView(o.r, o.c, persp));
+                const endsView = resolved.map(p => toView(p.end.r, p.end.c, persp));
                 clearHighlights();
-                optsView.forEach(({ vr, vc }) => cellElView(vr, vc)?.classList.add("hl"));
+                endsView.forEach(({ vr, vc }) => cellElView(vr, vc)?.classList.add("hl"));
                 return;
             }
 
-            const end = walkStepsOwner(ownerChar, picked.r, picked.c, from.remaining);
+            // destino já calculado
+            const end = picked.end;
             if (!canLand(end.r, end.c)) {
                 setMsg("Destino inválido. Clica na peça para cancelar.");
-                const optsView = options.map(o => toView(o.r, o.c, persp));
+                const endsView = resolved.map(p => toView(p.end.r, p.end.c, persp));
                 clearHighlights();
-                optsView.forEach(({ vr, vc }) => cellElView(vr, vc)?.classList.add("hl"));
+                endsView.forEach(({ vr, vc }) => cellElView(vr, vc)?.classList.add("hl"));
                 return;
             }
 

@@ -563,6 +563,31 @@ html, body {
     transform: scale(1.05); 
 }
 
+/* Classificações Menu */
+.class-menu {
+    position: absolute;
+    top: 50%;
+    left: 98%;              
+    transform: translateY(-50%);
+    width: 40%;
+    height: 72%;
+    background: rgba(255,255,255,.92);
+    border-radius: 12px;
+    box-shadow: 0 10px 26px rgba(0,0,0,.18);
+    z-index: 1010;
+    display: flex;
+    flex-direction: column;
+    padding: 1.2vh 1.4vh;  
+    overflow: hidden;  
+}
+
+.titulo-class {
+    margin: 0;
+    padding: 2vh 1vh 2vh 1vh;
+    font-weight: 700;
+    font-size: 4vh;
+}
+
 
 /*----------------------------------------------*/
 /* Jogador vs Jogador Botão */
@@ -765,6 +790,36 @@ html, body {
         inset 0 2px 4px rgba(0, 0, 0, 0.25);
 }
 
+/*----------------------------------------------*/
+/* Desistir Botão */
+.desistir-button {
+    position: absolute;
+    top: 43%;
+    left: 39.5%;
+    padding: 0.7em 1.4em;
+    border-radius: 10px;
+    border: none;
+    background-color: #b02424;
+    color: #ffffff;
+    font-weight: bold;
+    font-size: 0.8rem;
+    cursor: pointer;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    transition: transform 0.1s ease, box-shadow 0.2s ease;
+}
+
+.desistir-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.35);
+}
+
+.desistir-button:active {
+    transform: translateY(1px);
+    box-shadow:
+        0 2px 4px rgba(0, 0, 0, 0.25),
+        inset 0 2px 4px rgba(0, 0, 0, 0.25);
+}
+
 
 /*----------------------------------------------*/
 /* Tabuleiro */
@@ -819,6 +874,36 @@ html, body {
 
 .tabuleiro div.cell .piece.vermelha {
     background: radial-gradient(35% 35% at 30% 30%, rgba(255,255,255,.35), transparent 60%), #d22f2f;
+}
+
+.tabuleiro div.hl {
+    position: relative;  
+    z-index: 10;  
+
+}
+
+/* Painel de mensagens no canto inferior esquerdo */
+#msgPanel {
+    position: fixed;
+    left: 16px;
+    bottom: 16px;
+    max-width: 40vh;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(6px);
+    font-size: x-large;
+    color: #f2e7c8;
+    border: 1px solid rgba(255,255,255,0.2);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    overflow-y: auto;
+    z-index: 10;
+}
+
+#msgPanel #statusMsg {
+    font-weight: 700;
+    line-height: 1.3;
+    white-space: pre-line;
 }
 
 
