@@ -22,7 +22,6 @@ html, body {
     left: 50%;
     transform: translate(-50%, -50%);
     width: 82%;
-    max-width: 970px;
     height: auto;
     margin-top: 0;
     filter: drop-shadow(0 14px 18px rgba(0, 0, 0, 0.5));
@@ -56,8 +55,6 @@ html, body {
     transform: translate(-50%, -50%);
     width: 60%;
     height: auto;
-    max-width: 650px;
-    min-width:430px;
     font-size: 1.7vw;
     z-index: 10;
 }
@@ -71,7 +68,7 @@ html, body {
 
 
 /*-------------------------------------------*/
-/* User Button */
+/* Botão Utilizador */
 .user-button {
     position: absolute;
     top: 10%;
@@ -229,7 +226,7 @@ html, body {
 
 
 /*-------------------------------------------*/
-/* Setting Button */
+/* Botão Configurações */
 .settings-button {
     position: absolute;
     top: 20%;
@@ -253,16 +250,14 @@ html, body {
 }
 
 
-
 /*-------------------------------------------*/
-/* Settings Menu */
+/* Menu Configurações */
 .settings-menu {
     position: absolute;
     top: 29%;
     left: 67%;
     transform: translate(-50%, -50%);
     width: 30%;
-    max-height: 40%;
     background-color: #230a07;
     border-radius: 9px;
     z-index: 1010;
@@ -294,11 +289,8 @@ html, body {
     cursor: pointer;
     transition: background-color 0.2s ease;
     width: 80%;
-    min-width: 80px;
-    max-width: 150px;
     text-align: center;
 }
-
 
 .first-player-text {
     color: #fff;
@@ -319,8 +311,6 @@ html, body {
     cursor: pointer;
     transition: background-color 0.2s ease;
     width: 80%;
-    min-width: 80px;
-    max-width: 150px;
     text-align: center;
 }
 
@@ -343,8 +333,6 @@ html, body {
     cursor: pointer;
     transition: background-color 0.2s ease;
     width: 80%;
-    min-width: 80px;
-    max-width: 150px;
     text-align: center;
 }
 
@@ -379,10 +367,8 @@ html, body {
 }
 
 
-
-
 /*-------------------------------------------*/
-/* Regras Button */
+/* Botão Regras */
 .regras-button {
     position: absolute;
     top: 42%;
@@ -407,7 +393,7 @@ html, body {
 
 
 /*----------------------------------------------*/
-/* Regras Menu */
+/* Menu Regras */
 .regras-menu {
     position: absolute;
     top: 50%;
@@ -541,7 +527,7 @@ html, body {
 
 
 /*----------------------------------------------*/
-/* Classificações Button */
+/* Botão Classificações */
 .class-button {
     position: absolute;
     top: 36%;
@@ -564,7 +550,7 @@ html, body {
     transform: scale(1.05); 
 }
 
-/* Classificações Menu */
+/* Menu Classificações */
 .class-menu {
     position: absolute;
     top: 50%;
@@ -590,7 +576,7 @@ html, body {
     color: #230a07;
 }
 
-/* cartão que envolve a tabela */
+/* Cartão que envolve a tabela */
 .table-card {
     flex: 1;
     display: flex;
@@ -601,13 +587,13 @@ html, body {
     overflow: hidden;
 }
 
-/* zona de scroll da tabela */
+/* Zona de scroll da tabela */
 .table-wrap {
     flex: 1;
     overflow: auto;
 }
 
-/* tabela */
+/* Tabela */
 .table-class {
     width: 100%;
     border-collapse: separate;
@@ -617,7 +603,7 @@ html, body {
     border-spacing: 1.2vh 0; 
 }
 
-/* cabeçalho fixo */
+/* Cabeçalho fixo */
 .table-class thead th {
     position: sticky;
     top: 0;
@@ -632,7 +618,7 @@ html, body {
     z-index: 1;
 }
 
-/* células */
+/* Células */
 .table-class td {
     padding: 1vh 1.2vh;
     font-size: 13px;
@@ -642,17 +628,15 @@ html, body {
     word-wrap: break-word;
 }
 
-
-/* ações no fundo */
+/* Ações no fundo */
 .class-actions {
-    margin-top: auto;            /* empurra para o fundo */
+    margin-top: auto;
     display: flex;
-    justify-content: center;     /* centra horizontalmente */
-    padding: 1.2vh 0 1.6vh;      /* respirinho em baixo */
+    justify-content: center; 
+    padding: 1.2vh 0 1.6vh;  
 }
 
-/* botão limpar */
-
+/* Botão limpar */
 .clear-button {
     background-color: #a0522d;
     color: #fff;
@@ -677,105 +661,97 @@ html, body {
     background-color: #954c2a;
 }
 
+
 /*----------------------------------------------*/
-/* Jogador vs Jogador Botão */
+/* Botão Jogador vs Jogador */
 .jogador {
     position: absolute;
     top: 20%;
-    left: 40%;
-    width: 25%;
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+    width: clamp(260px, 25%, 420px);
     height: 7%;
+    line-height: 1.1;
     border-radius: 10px;
-    background-color: #fff; 
-    color: #230a07; 
+    background-color: #fff;
+    color: #230a07;
     font-size: 0.8rem;
     font-weight: bold;
-    border: none;     
+    border: none;
     cursor: pointer;
     display: flex;
-    align-items: center;     
-    justify-content: center;   
-    gap: 0.6em;          
+    align-items: center;
+    justify-content: center;
+    gap: 0.6em;
     padding: 0.6em 1em;
-    transition:
-        background-color 0.2s ease,
-        transform 0.1s ease,
-        box-shadow 0.2s ease;
+    white-space: nowrap;
+    transition: background-color .2s ease, transform .12s ease, box-shadow .2s ease;
+    will-change: transform;
     box-shadow:
         0 4px 6px rgba(0, 0, 0, 0.3),
         inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
 .jogador-vs-jogador {
-    width: 3em;      
+    width: 1.6rem;
     height: auto;
     filter: drop-shadow(0 1px 1px rgba(0,0,0,0.25));
 }
 
 .jogador:hover {
-    transform: translateY(-2px);
-    background-color: #954c2ac5;
-    box-shadow:
-        0 6px 10px rgba(0, 0, 0, 0.35)
+    transform: translateY(-2px); 
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.35);
 }
 
 .jogador:active {
-    transform: translateY(1px);
-    background-color: #a0522d;
-    box-shadow:
-        0 2px 4px rgba(0, 0, 0, 0.25),
-        inset 0 2px 4px rgba(0, 0, 0, 0.25);
+    transform: translateY( 1px);
 }
 
 
 /*----------------------------------------------*/
-/* Jogador vs IA Botão */
+/* Botão Jogador vs IA */
 .IA {
     position: absolute;
     top: 30%;
-    left: 40%;
-    width: 25%;
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+    width: clamp(260px, 25%, 420px);
     height: 7%;
     border-radius: 10px;
-    background-color: #fff; 
-    color: #230a07; 
+    background-color: #fff;
+    color: #230a07;
     font-size: 0.8rem;
     font-weight: bold;
-    border: none;     
+    border: none;
     cursor: pointer;
     display: flex;
-    align-items: center;     
-    justify-content: center;   
-    gap: 0.6em;          
+    align-items: center;
+    justify-content: center;
+    gap: 0.6em;
     padding: 0.6em 1em;
-    transition:
-        background-color 0.2s ease,
-        transform 0.1s ease,
-        box-shadow 0.2s ease;
+    white-space: nowrap;
+    transition: background-color .2s ease, transform .12s ease, box-shadow .2s ease;
+    will-change: transform;
     box-shadow:
-        0 4px 6px rgba(0, 0, 0, 0.3),
-        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        0 4px 6px rgba(0,0,0,.3),
+        inset 0 1px 0 rgba(255,255,255,.8);
 }
 
 .jogador-vs-ia {
-    width: 3em;   
+    width: 1.6rem;
     height: auto;
     filter: drop-shadow(0 1px 1px rgba(0,0,0,0.25));
 }
 
 .IA:hover {
-    transform: translateY(-2px);
-    background-color: #954c2ac5;
-    box-shadow:
-        0 6px 10px rgba(0, 0, 0, 0.35)
+    transform: translateY(-2px); 
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.35);
 }
 
 .IA:active {
     transform: translateY(1px);
-    background-color: #a0522d;
-    box-shadow:
-        0 2px 4px rgba(0, 0, 0, 0.25),
-        inset 0 2px 4px rgba(0, 0, 0, 0.25);
 }
 
 
@@ -817,6 +793,7 @@ html, body {
     z-index: 10;
 }
 
+
 /*----------------------------------------------*/
 /* Dados */
 .dados-wrap {
@@ -833,13 +810,13 @@ html, body {
 .dados-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
+    gap: clamp(6px, 1.5vw, 12px);
 }
 
 .dado {
-    width: 70px;
-    height: 90px;
-    border-radius: 10px;
+    width: clamp(38px, 8vw, 70px);
+    height: clamp(50px, 10vw, 90px);
+    border-radius: clamp(6px, 1.2vw, 10px);
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }
 
@@ -851,16 +828,16 @@ html, body {
     background-color: #230a07;
 }
 
-/* Botão */
+/* Botão Dados */
 .baralhar-button {
-    margin-top: 10px;
-    padding: 0.7em 1.4em;
-    border-radius: 10px;
+    margin-top: clamp(6px, 1.2vw, 12px);
+    padding: clamp(6px, 0.9vw, 10px) clamp(12px, 1.8vw, 20px);
+    border-radius: clamp(6px, 1vw, 10px);
+    font-size: clamp(0.9rem, 1.6vw, 1rem);
     border: none;
     background-color: #fff;
     color: #230a07;
     font-weight: bold;
-    font-size: 1rem;
     cursor: pointer;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
     transition: transform 0.1s ease, box-shadow 0.2s ease;
@@ -878,31 +855,34 @@ html, body {
         inset 0 2px 4px rgba(0, 0, 0, 0.25);
 }
 
+
 /*----------------------------------------------*/
-/* Desistir Botão */
+/* Botão Desistir */
 .desistir-button {
     position: absolute;
     top: 43%;
-    left: 39.5%;
-    padding: 0.7em 1.4em;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: clamp(0.6em, 1.4vh, 0.7em) clamp(1em, 1.8vw, 1.2em);
     border-radius: 10px;
     border: none;
     background-color: #b02424;
     color: #ffffff;
     font-weight: bold;
-    font-size: 0.8rem;
+    font-size: clamp(0.7rem, 1.4vw, 0.8rem);
     cursor: pointer;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
     transition: transform 0.1s ease, box-shadow 0.2s ease;
+    width: clamp(120px, 18vw, 200px); 
 }
 
 .desistir-button:hover {
-    transform: translateY(-2px);
+    transform: translate(-50%, -2px);
     box-shadow: 0 6px 10px rgba(0, 0, 0, 0.35);
 }
 
 .desistir-button:active {
-    transform: translateY(1px);
+    transform: translate(-50%, 1px);
     box-shadow:
         0 2px 4px rgba(0, 0, 0, 0.25),
         inset 0 2px 4px rgba(0, 0, 0, 0.25);
@@ -970,12 +950,13 @@ html, body {
 
 }
 
+
+/*----------------------------------------------*/
 /* Painel de mensagens no canto inferior esquerdo */
 #msgPanel {
     position: fixed;
     left: 16px;
     bottom: 16px;
-    max-width: 40vh;
     padding: 10px 12px;
     border-radius: 12px;
     background: rgba(0,0,0,0.5);
