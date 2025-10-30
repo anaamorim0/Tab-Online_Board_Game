@@ -430,6 +430,7 @@ html, body {
     padding: 2vh 1vh 2vh 1vh;
     font-weight: 700;
     font-size: 4vh;
+    color: #230a07;
 }
 
 .regras-head {
@@ -441,7 +442,7 @@ html, body {
     box-sizing: border-box;
     padding: 1.2vh 1.8vh;     
     background: #e6b97e;
-    color: #2a1b10;
+    color: #230a07;
     cursor: pointer;
     font-weight: 500;
     font-size: 2vh;
@@ -567,27 +568,114 @@ html, body {
 .class-menu {
     position: absolute;
     top: 50%;
-    left: 98%;              
+    left: 98%;
     transform: translateY(-50%);
     width: 40%;
     height: 72%;
-    background: rgba(255,255,255,.92);
+    background: rgba(255, 255, 255, 0.92);
     border-radius: 12px;
-    box-shadow: 0 10px 26px rgba(0,0,0,.18);
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.18);
     z-index: 1010;
     display: flex;
     flex-direction: column;
-    padding: 1.2vh 1.4vh;  
-    overflow: hidden;  
+    padding: 1.2vh 1.4vh;
+    overflow: hidden;
 }
 
 .titulo-class {
     margin: 0;
-    padding: 2vh 1vh 2vh 1vh;
+    padding: 2vh 1vh 1.4vh 1vh;
     font-weight: 700;
     font-size: 4vh;
+    color: #230a07;
 }
 
+/* cartão que envolve a tabela */
+.table-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    border: 1px solid #e7dfcf;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+/* zona de scroll da tabela */
+.table-wrap {
+    flex: 1;
+    overflow: auto;
+}
+
+/* tabela */
+.table-class {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    table-layout: fixed;
+    font-size: 1.7vh;
+    border-spacing: 1.2vh 0; 
+}
+
+/* cabeçalho fixo */
+.table-class thead th {
+    position: sticky;
+    top: 0;
+    background: #e6b97e;
+    color: #230a07;
+    font-weight: 700;
+    font-size: 15px;
+    padding: 1vh 1.2vh;
+    text-align: center;
+    white-space: nowrap;
+    border-radius: 7px;
+    z-index: 1;
+}
+
+/* células */
+.table-class td {
+    padding: 1vh 1.2vh;
+    font-size: 13px;
+    text-align: center;
+    border-bottom: 1px solid #f0e9da;
+    color: #2a1b10;
+    word-wrap: break-word;
+}
+
+
+/* ações no fundo */
+.class-actions {
+    margin-top: auto;            /* empurra para o fundo */
+    display: flex;
+    justify-content: center;     /* centra horizontalmente */
+    padding: 1.2vh 0 1.6vh;      /* respirinho em baixo */
+}
+
+/* botão limpar */
+
+.clear-button {
+    background-color: #a0522d;
+    color: #fff;
+    font-size: 0.7rem;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-weight: bold;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    width: 80%;
+    margin-top: 1.5vh;
+}
+
+.clear-button:hover {
+    transform: translateY(-2px);
+}
+
+.clear-button:active {
+    transform: translateY(2px);
+    background-color: #954c2a;
+}
 
 /*----------------------------------------------*/
 /* Jogador vs Jogador Botão */

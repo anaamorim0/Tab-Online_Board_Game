@@ -67,11 +67,35 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (desistirButton) {
         desistirButton.addEventListener("click", () => {
-            // Quando o jogador desiste, volta ao ecrã inicial
+            if (!GameState.inGame) return;
+            if (!isHumanTurnNow()) return;
+
+            const winnerColor = GameState.vsAI
+            ? GameState.aiColorLabel
+            : (GameState.currentPlayer === "Azul" ? "Vermelho" : "Azul");
+            const winnerDisplay = winnerLabelForDisplay(winnerColor);
+
+            // guarda classificação já
+            try {
+            const nivel = GameState.vsAI ? (GameState.aiDifficulty || "Fácil") : "PvP";
+            saveClassification(nivel, winnerDisplay);
+            if (!classMenu.classList.contains("hidden")) renderClassifications();
+            } catch (_) {}
+
+            // mostra aviso curto e reinicia bem rápido
+            const DESISTIR_DELAY = 1200; // ms
+            setMsgTemp(`Jogador desistiu do jogo.\n${winnerDisplay} ganhou.`, DESISTIR_DELAY);
+
+            setTimeout(() => {
             restartToModeSelection();
             desistirButton.classList.add("hidden");
+            updateDesistirUI();
+            }, DESISTIR_DELAY);
         });
     }
+
+
+
 
 
     regrasButton.addEventListener("click", () => {
@@ -88,6 +112,7 @@ document.addEventListener("DOMContentLoaded", () => {
     classButton.addEventListener("click", () => {
         if (classMenu.classList.contains("hidden")) {
             closeAllMenus();
+            renderClassifications();
             classMenu.classList.remove("hidden");
             classIcon.src = "img/classificacoes_logo_2.png";
         } else {
@@ -114,6 +139,8 @@ document.addEventListener("DOMContentLoaded", () => {
         announceAwaitRoll(GameState.currentPlayer);
         renderBoard();
         updateRollUI();
+        updateDesistirUI();
+
     });
 
 
@@ -138,6 +165,8 @@ document.addEventListener("DOMContentLoaded", () => {
         // 3) Desenhar UI
         renderBoard();
         updateRollUI();
+        updateDesistirUI();
+
 
         // 4) Mensagem de arranque correta
         if (GameState.currentPlayer === GameState.aiColorLabel) {
@@ -164,15 +193,14 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    
+    const clearBtn = document.getElementById("clearButton");
+        if (clearBtn) {
+        clearBtn.addEventListener("click", () => {
 
-    function initDados() {
-        resetDiceVisual();
-        const botao = document.getElementById("baralharDados");
-        if (botao) botao.addEventListener("click", baralharDados);
+            localStorage.removeItem("classificacoes");
+            renderClassifications(); // atualiza a tabela e desativa o botão
+        });
     }
-
-    window.addEventListener("DOMContentLoaded", initDados);
 
 
 
@@ -240,6 +268,20 @@ document.addEventListener("DOMContentLoaded", () => {
         const isAIturn = GameState.vsAI && GameState.currentPlayer === GameState.aiColorLabel;
         const header = isAIturn ? "É a vez da IA jogar." : "É a sua vez de jogar.";
         msgEl.textContent = `${header}\n${t}`;
+    }
+
+    function setMsgTemp(texto, ms = 2000, { force = true } = {}) {
+        // garante que o painel está visível
+        toggleMsgPanel(true);
+
+        setMsg(texto, { force });
+
+        clearTimeout(setMsgTemp._timer);
+        setMsgTemp._timer = setTimeout(() => {
+            // limpa a mensagem e volta a esconder o painel
+            setMsg("", { force: true });
+            toggleMsgPanel(false);
+        }, ms);
     }
 
 
@@ -310,6 +352,13 @@ document.addEventListener("DOMContentLoaded", () => {
         stats: { startTime: null, moves: 0 }  
     };
 
+    function winnerLabelForDisplay(winnerColor) {
+        // Em PvP mantemos as cores; em vsIA mapeamos para "Jogador"/"IA"
+        if (!GameState.vsAI) return winnerColor;
+        return (winnerColor === GameState.aiColorLabel) ? "IA" : "Jogador";
+    }
+
+
     // helper (mete isto perto do defer)
     function scheduleAI(ms) {
         if (!GameState.vsAI) return;
@@ -321,48 +370,55 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ---- Classificações (persistência + UI) ----
-    const CLASS_KEY = "tabJogo_classificacoes_v1";
+    function saveClassification(nivelAI, vencedorColor) {
+        // Converte sempre a cor para Jogador / IA (quando aplicável)
+        const vencedor = winnerLabelForDisplay(vencedorColor);
 
-    const Classif = {
-    list: [],
-    load() {
-        try {
-        const raw = localStorage.getItem(CLASS_KEY);
-        this.list = raw ? JSON.parse(raw) : [];
-        } catch {
-        this.list = [];
-        }
-    },
-    save() {
-        localStorage.setItem(CLASS_KEY, JSON.stringify(this.list));
-    },
-    add(entry) {
-        // entrada mais recente no topo
-        this.list.unshift(entry);
-        this.save();
-        this.render();
-    },
-    render() {
-        const tbody = document.getElementById("classTbody");
-        if (!tbody) return;
-        tbody.innerHTML = "";
-        this.list.forEach(row => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-            <td>${row.datetime}</td>
-            <td>${row.boardSize}</td>
-            <td>${row.aiLevel}</td>
-            <td>${row.winner}</td>
-            <td>${row.moves}</td>
-        `;
-        tbody.appendChild(tr);
-        });
+        const classificacoes = JSON.parse(localStorage.getItem("classificacoes")) || [];
+
+        // Gera data sem vírgula
+        const data = new Date()
+            .toLocaleString("pt-PT", { hour12: false })
+            .replace(",", "");
+
+        // Guarda o registo formatado
+        classificacoes.push({ data, nivelAI, vencedor });
+
+        // Só mantém as últimas 10 jogadas
+        const limit = 10;
+        const classificacoesLimitadas = classificacoes.slice(-limit);
+
+        localStorage.setItem("classificacoes", JSON.stringify(classificacoesLimitadas));
+
+        renderClassifications();
     }
-    };
 
-    // Carrega e desenha ao arrancar
-    Classif.load();
-    requestAnimationFrame(() => Classif.render());
+
+
+    function renderClassifications() {
+        const tbody = document.getElementById("classTbody");
+        const clearBtn = document.getElementById("clearButton");
+        if (!tbody) return;
+
+        const list = JSON.parse(localStorage.getItem("classificacoes")) || [];
+
+        // último → primeiro (mais recentes em cima)
+        const rows = [...list].reverse();
+
+        tbody.innerHTML = "";
+        rows.forEach(({ data, nivelAI, vencedor }) => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+            <td>${data}</td>
+            <td>${nivelAI}</td>
+            <td>${vencedor}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        // botão ativo só quando há dados
+        if (clearBtn) clearBtn.disabled = list.length === 0;
+    }
 
 
 
@@ -441,6 +497,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function updateRollUI() {
         const btn = document.getElementById("baralharDados");
+
+        // 👉 garantir que o botão Desistir é sempre atualizado,
+        // mesmo que a função faça return mais abaixo
+        updateDesistirUI();
+
         if (!btn) return;
 
         // 1) Fim do jogo → mostra sempre "Jogar de novo"
@@ -458,17 +519,15 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        // 3) Caso "Passar a vez"
         // 3) Caso "Passar a vez" OU "Relançar"
         if (GameState.mustPass) {
             btn.style.display = "";
             btn.disabled = false;
             btn.textContent = (GameState.nextPlayer === GameState.currentPlayer)
-                ? "Lançar Dados"
-                : "Passar a vez";
+            ? "Lançar Dados"
+            : "Passar a vez";
             return;
         }
-
 
         // 4) Jogador humano e à espera de lançamento
         if (GameState.mode === "awaitRoll") {
@@ -481,6 +540,16 @@ document.addEventListener("DOMContentLoaded", () => {
         // 5) Outros modos → esconder
         btn.style.display = "none";
     }
+
+
+    function updateDesistirUI() {
+        if (!desistirButton) return;
+
+        const hide = !GameState.inGame || GameState.mode === "finished" || !isHumanTurnNow();
+        desistirButton.classList.toggle("hidden", hide);
+        desistirButton.disabled = hide; // belt & suspenders
+    }
+
 
 
     function dirForRow(r) { return (r === 3 || r === 1) ? +1 : -1; }
@@ -591,51 +660,60 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnDados) {
         btnDados.addEventListener("click", () => {
             if (GameState.mode === "finished") {
-                restartToModeSelection();
-                return;
+            restartToModeSelection();
+            return;
             }
-
-            // Já a lançar? Ignora.
             if (GameState.isRolling) return;
 
-            // "Passar a vez" / "Relançar" sem lançar dados
+            // Passar/Relançar sem lançar
             if (GameState.mode === "awaitRoll" && GameState.mustPass) {
-                GameState.mustPass = false;
-                GameState.currentPlayer = GameState.nextPlayer || GameState.currentPlayer;
-                GameState.nextPlayer = null;
-                announceAwaitRoll(GameState.currentPlayer);
-                updateRollUI();
-                scheduleAI(AI_DELAY.CHAIN);
-                return;
+            GameState.mustPass = false;
+            GameState.currentPlayer = GameState.nextPlayer || GameState.currentPlayer;
+            GameState.nextPlayer = null;
+            announceAwaitRoll(GameState.currentPlayer);
+            updateRollUI();
+            scheduleAI(AI_DELAY.CHAIN);
+            return;
             }
 
-            // Lançamento real
+            // --- Lançamento real (animação + leitura) ---
             GameState.isRolling = true;
-            setTimeout(() => {
-                const d = lerLancamentoPaus();
-                GameState.dice = d;
-                GameState.mode = "awaitPiece";
-                GameState.selected = null;
 
-                let msg = `Saiu ${d.value}.\n`;
-                msg += (GameState.vsAI && GameState.currentPlayer === GameState.aiColorLabel)
+            // animação curtinha (um único sítio a baralhar)
+            const SPINS = 8;      // nº de “baralhadas” visuais
+            const STEP  = 60;     // ms entre baralhadas
+            for (let i = 0; i < SPINS; i++) {
+            setTimeout(baralharDados, i * STEP);
+            }
+
+            // lê o resultado uma única vez, no fim da animação
+            setTimeout(() => {
+            const d = lerLancamentoPaus();
+            GameState.dice = d;
+            GameState.mode = "awaitPiece";
+            GameState.selected = null;
+
+            let msg = `Saiu ${d.value}.\n`;
+            msg += (GameState.vsAI && GameState.currentPlayer === GameState.aiColorLabel)
                 ? "A IA vai escolher uma peça para jogar."
                 : "Escolha uma peça para jogar.";
 
-                if (d.canRepeat) msg += `\nComo saiu ${d.value} pode voltar a lançar os dados.\n`;
+            if (d.canRepeat) msg += `\nComo saiu ${d.value} pode voltar a lançar os dados.\n`;
 
-                setMsg(msg);
-                clearHighlights();
-                updateRollUI();
+            setMsg(msg);
+            clearHighlights();
+            updateRollUI();
+            // 👉 só destacamos peças quando for a vez do humano
+            if (!isAITurnNow()) {
                 highlightMoveablePieces();
+            }
 
-                GameState.isRolling = false;
-                // Se for IA, o próximo passo (escolha de peça) é agendado aqui
-                scheduleAI(AI_DELAY.PICK);
-            }, 0);
+            GameState.isRolling = false;        // <- só aqui voltamos a permitir novo lance
+            scheduleAI(AI_DELAY.PICK);          // se for IA, segue para escolher peça
+            }, SPINS * STEP + 10);
         });
-
     }
+
 
     function meOwner(label) { return label === "Azul" ? "A" : "V"; }
     function onFourthRow(r, owner) { return (owner === "A" && r === 0) || (owner === "V" && r === 3); }
@@ -698,24 +776,37 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (piece.owner === "A") {
                     if (curR === 2) { curR = 1; rem--; continue; }
                     if (curR === 1) {
-                        const up = (piece.stage === STAGE.HAS_BEEN_LAST) ? null : { r: 0, c: curC };
+                        const up   = (piece.stage === STAGE.HAS_BEEN_LAST) ? null : { r: 0, c: curC };
                         const down = { r: 2, c: curC };
-                        const options = [];
-                        if (up) options.push(up);
-                        options.push(down);
-                        return { needsChoice: options.length > 1, options, remaining: rem - 1 };
+                        const opts = [];
+                        if (up) opts.push(up);
+                        opts.push(down);
+
+                        if (opts.length > 1) {
+                        return { needsChoice: true, options: opts, remaining: rem - 1 };
+                        } else {
+                        const end = walkStepsOwner("A", opts[0].r, opts[0].c, rem - 1);
+                        return { r: end.r, c: end.c, needsChoice: false };
+                        }
                     }
-                } else {
+                } else { // owner === "V"
                     if (curR === 1) { curR = 2; rem--; continue; }
                     if (curR === 2) {
-                        const up = (piece.stage === STAGE.HAS_BEEN_LAST) ? null : { r: 3, c: curC };
+                        const up   = (piece.stage === STAGE.HAS_BEEN_LAST) ? null : { r: 3, c: curC };
                         const down = { r: 1, c: curC };
-                        const options = [];
-                        if (up) options.push(up);
-                        options.push(down);
-                        return { needsChoice: options.length > 1, options, remaining: rem - 1 };
+                        const opts = [];
+                        if (up) opts.push(up);
+                        opts.push(down);
+
+                        if (opts.length > 1) {
+                        return { needsChoice: true, options: opts, remaining: rem - 1 };
+                        } else {
+                        const end = walkStepsOwner("V", opts[0].r, opts[0].c, rem - 1);
+                        return { r: end.r, c: end.c, needsChoice: false };
+                        }
                     }
                 }
+
             }
         }
 
@@ -783,32 +874,36 @@ document.addEventListener("DOMContentLoaded", () => {
     function checkWin() {
         const a = countPieces("A");
         const v = countPieces("V");
+
         if (a === 0 || v === 0) {
-            const winner = a > 0 ? "Azul" : "Vermelho";
-            setMsg(`Fim do jogo! Ganha ${winner}.`);
+            // Determina cor vencedora
+            const winnerColor = a > 0 ? "Azul" : "Vermelho";
+
+            // Usa a função que já converte para "Jogador"/"IA" no modo vs AI
+            const winnerDisplay = winnerLabelForDisplay(winnerColor);
+
+            // Mostra mensagem final
+            setMsg(`Fim do jogo!\n${winnerDisplay} ganhou!`);
+
             GameState.mode = "finished";
             clearHighlights();
             GameState.dice = { sum: null, value: null, canRepeat: false };
+
             updateRollUI();
-            // Registar classificação
+            updateDesistirUI();
+
+            // Guarda nas classificações
             try {
-                const when = new Date();
-                const dt = when.toLocaleString(); // Data/Hora local
-                Classif.add({
-                    datetime: dt,
-                    boardSize: `${GameState.cols}x${GameState.rows}`,
-                    aiLevel: GameState.vsAI ? (GameState.aiDifficulty || "-") : "PvP",
-                    winner: winner,
-                    moves: GameState.stats.moves
-                });
-                } catch (e) {
-                // silencioso; não queremos quebrar o jogo por causa da tabela
-            }
+            const nivel = GameState.vsAI ? (GameState.aiDifficulty || "Fácil") : "PvP";
+            saveClassification(nivel, winnerDisplay);
+            if (!classMenu.classList.contains("hidden")) renderClassifications();
+            } catch (_) { /* silencioso */ }
 
             return true;
         }
         return false;
     }
+
 
     function endTurnOrRepeat() {
         const repeated = GameState.dice.canRepeat;
@@ -875,7 +970,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 setMsg(
                 `Saiu ${v}.\n` +
                 `Não é uma jogada válida.\n` +
-                `Como saiu ${v}, ${isAI ? "a IA" : "lança"} de novo o dado.`
+                `Como saiu ${v}, ${isAI ? "a IA" : "lanca"} de novo o dado.`
                 );
             } else {
                 // Passa a vez para o outro
@@ -905,10 +1000,9 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             return;
         }
-
-
-
     }
+
+
 
     function progressHeuristic(ownerChar, from, to) {
         const rowScore = ownerChar === "A" ? (3 - to.r) : (to.r - 0);
@@ -950,14 +1044,21 @@ document.addEventListener("DOMContentLoaded", () => {
         const probe = possibleAdvanceFrom(r, c, steps);
         if (probe.needsChoice) {
             for (const opt of probe.options) {
-                const end = walkSteps(opt.r, opt.c, probe.remaining);
+                const end = walkStepsOwner(me, opt.r, opt.c, probe.remaining); // "me" é "A" ou "V"
                 if (end.r == null) continue;
                 if (!canLand(end.r, end.c)) continue;
                 const cap = !!(GameState.board[end.r][end.c] && GameState.board[end.r][end.c].owner !== me);
-                moves.push({ from: { r, c }, to: { r: end.r, c: end.c }, capture: cap, progress: progressHeuristic(me, { r, c }, { r: end.r, c: end.c }) });
+                moves.push({
+                from: { r, c },
+                to: { r: end.r, c: end.c },
+                capture: cap,
+                progress: progressHeuristic(me, { r, c }, { r: end.r, c: end.c }),
+                });
             }
             return moves;
         }
+
+
 
         if (probe.r != null && canLand(probe.r, probe.c)) {
             const cap = !!(GameState.board[probe.r][probe.c] && GameState.board[probe.r][probe.c].owner !== me);
@@ -1005,6 +1106,12 @@ document.addEventListener("DOMContentLoaded", () => {
         return GameState.vsAI && GameState.currentPlayer === GameState.aiColorLabel && GameState.mode !== "finished";
     }
 
+    function isHumanTurnNow() {
+        return GameState.inGame &&
+                (!GameState.vsAI || GameState.currentPlayer !== GameState.aiColorLabel);
+    }
+
+
     function aiMaybeAct() {
         if (!isAITurn()) return;
 
@@ -1041,7 +1148,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 setMsg(
                 `Saiu ${v}.\n` +
                 `Não é uma jogada válida.\n` +
-                `Como saiu ${v}, a IA lança de novo o dado.`
+                `Como saiu ${v}, a IA lanca de novo o dado.`
                 );
                 // mantém o mesmo jogador para relançar
                 GameState.mode = "awaitRoll";
@@ -1079,12 +1186,36 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    function walkStepsOwner(ownerChar, startR, startC, rem) {
+        let curR = startR, curC = startC, steps = rem;
+        while (steps > 0) {
+            const d = dirForRow(curR);
+            const canRight = (d === +1 && curC < GameState.cols - 1);
+            const canLeft  = (d === -1 && curC > 0);
+
+            if ((d === +1 && canRight) || (d === -1 && canLeft)) {
+            curC += d; steps--; continue;
+            }
+
+            // transição vertical depende do lado do dono
+            curR = (ownerChar === "A")
+            ? (curR === 3 ? 2 : curR === 2 ? 1 : curR === 1 ? 0 : 1)
+            : (curR === 0 ? 1 : curR === 1 ? 2 : curR === 2 ? 3 : 2);
+            steps--;
+        }
+        return { r: curR, c: curC };
+    }
+
 
     function onCellClick(e) {
         const vr = parseInt(e.currentTarget.dataset.vr, 10);
         const vc = parseInt(e.currentTarget.dataset.vc, 10);
         const persp = getPerspectivePlayer();
         const { r, c } = fromView(vr, vc, persp);
+
+        // se for a vez da IA, ignorar input do utilizador
+        if (isAITurnNow()) return;
+
 
         if (GameState.mode === "finished") return;
 
@@ -1107,29 +1238,8 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             return curR;
         }
-        function walkStepsOwner(ownerChar, startR, startC, rem) {
-            let curR = startR, curC = startC, steps = rem;
-            while (steps > 0) {
-                const d = dirForRow(curR);
-                const canRight = (d === +1 && curC < GameState.cols - 1);
-                const canLeft = (d === -1 && curC > 0);
 
-                // mover na horizontal consome 1 passo
-                if ((d === +1 && canRight) || (d === -1 && canLeft)) {
-                    curC += d;
-                    steps--;
-                    continue;
-                }
 
-                // transição vertical consome 1 passo
-                const nr = (ownerChar === "A")
-                    ? (curR === 3 ? 2 : curR === 2 ? 1 : curR === 1 ? 0 : 1)
-                    : (curR === 0 ? 1 : curR === 1 ? 2 : curR === 2 ? 3 : 2);
-                curR = nr;
-                steps--;
-            }
-            return { r: curR, c: curC };
-        }
         function fixBranchOptionsForOwner(ownerChar, options) {
             if (ownerChar === "A") return options;
             return options.map(o => {

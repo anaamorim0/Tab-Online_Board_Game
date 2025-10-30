@@ -90,18 +90,21 @@
                 <!-- Menu Classificações -->
                 <div id="classMenu" class="class-menu hidden">
                     <h3 class="titulo-class">Classificações</h3>
-                    <table id="classTable">
+                    
+                    <table id="table-class" class="table-class">
                         <thead>
                         <tr>
-                            <th>Data/Hora</th>
-                            <th>Tamanho</th>
-                            <th>Nível IA</th>
+                            <th>Data</th>
+                            <th>Nível AI</th>
                             <th>Vencedor</th>
-                            <th>Nº de jogadas</th>
                         </tr>
                         </thead>
                         <tbody id="classTbody"></tbody>
                     </table>
+
+                    <div class="class-actions">
+                        <button id="clearButton" class="clear-button" type="button">Limpar</button>
+                    </div>
                 </div>
             
 
@@ -115,6 +118,18 @@
                     <h3 class="titulo-regras">Regras</h3>
 
                     <div id="regrasContent" class="texto-regras" tabindex="0">
+
+                        <section class="regras">
+                            <button class="regras-head" aria-expanded="false" aria-controls="regra-0">
+                                Informações importantes
+                            </button>
+                            <div id="regra-0" class="regras-body" hidden>
+                                <ul>
+                                <li>O jogador deve selecionar as <strong>configurações</strong> pretendidas antes de iniciar o jogo.</li>
+                                <li>Sempre que houver mais do que uma possibilidade de peça a ser jogada, o jogador pode desselecionar uma peça voltando a clicar nela.</li>
+                                </ul>
+                            </div>
+                        </section>
 
                         <section class="regras">
                             <button class="regras-head" aria-expanded="false" aria-controls="regra-1">
