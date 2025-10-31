@@ -14,6 +14,7 @@ html, body {
     height: 780px;
 }
 
+
 /*-------------------------------------------*/
 /* Caixa fechada */
 .wood-box {
@@ -71,7 +72,7 @@ html, body {
 
 
 /*-------------------------------------------*/
-/* User Button */
+/* Botão Utilizador */
 .user-button {
     position: absolute;
     top: 10%;
@@ -96,7 +97,7 @@ html, body {
 
 
 /*-------------------------------------------*/
-/* Login Menu */
+/* Menu Login */
 .login-menu {
     position: absolute;
     top: 19%;
@@ -229,7 +230,7 @@ html, body {
 
 
 /*-------------------------------------------*/
-/* Setting Button */
+/* Botão Configuarções */
 .settings-button {
     position: absolute;
     top: 20%;
@@ -253,9 +254,8 @@ html, body {
 }
 
 
-
 /*-------------------------------------------*/
-/* Settings Menu */
+/* Menu Configurações */
 .settings-menu {
     position: absolute;
     top: 29%;
@@ -297,7 +297,6 @@ html, body {
     max-width: 150px;
     text-align: center;
 }
-
 
 .first-player-text {
     color: #fff;
@@ -378,10 +377,8 @@ html, body {
 }
 
 
-
-
 /*-------------------------------------------*/
-/* Regras Button */
+/* Botão Regras */
 .regras-button {
     position: absolute;
     top: 42%;
@@ -406,7 +403,7 @@ html, body {
 
 
 /*----------------------------------------------*/
-/* Regras Menu */
+/* Menu Regras */
 .regras-menu {
     position: absolute;
     top: 50%;
@@ -540,7 +537,7 @@ html, body {
 
 
 /*----------------------------------------------*/
-/* Classificações Button */
+/* Botão Classificações */
 .class-button {
     position: absolute;
     top: 36%;
@@ -563,7 +560,7 @@ html, body {
     transform: scale(1.05); 
 }
 
-/* Classificações Menu */
+/* Menu Classificações */
 .class-menu {
     position: absolute;
     top: 50%;
@@ -589,7 +586,7 @@ html, body {
     color: #230a07;
 }
 
-/* cartão que envolve a tabela */
+/* Cartão que envolve a tabela */
 .table-card {
     flex: 1;
     display: flex;
@@ -600,13 +597,13 @@ html, body {
     overflow: hidden;
 }
 
-/* zona de scroll da tabela */
+/* Zona de scroll da tabela */
 .table-wrap {
     flex: 1;
     overflow: auto;
 }
 
-/* tabela */
+/* Tabela */
 .table-class {
     width: 100%;
     border-collapse: separate;
@@ -616,7 +613,7 @@ html, body {
     border-spacing: 1.2vh 0; 
 }
 
-/* cabeçalho fixo */
+/* Cabeçalho fixo */
 .table-class thead th {
     position: sticky;
     top: 0;
@@ -631,7 +628,7 @@ html, body {
     z-index: 1;
 }
 
-/* células */
+/* Células */
 .table-class td {
     padding: 1vh 1.2vh;
     font-size: 13px;
@@ -642,16 +639,15 @@ html, body {
 }
 
 
-/* ações no fundo */
+/* Ações no fundo */
 .class-actions {
-    margin-top: auto;            /* empurra para o fundo */
+    margin-top: auto;
     display: flex;
-    justify-content: center;     /* centra horizontalmente */
-    padding: 1.2vh 0 1.6vh;      /* respirinho em baixo */
+    justify-content: center;
+    padding: 1.2vh 0 1.6vh;
 }
 
-/* botão limpar */
-
+/* Botão limpar */
 .clear-button {
     background-color: #a0522d;
     color: #fff;
@@ -676,8 +672,9 @@ html, body {
     background-color: #954c2a;
 }
 
+
 /*----------------------------------------------*/
-/* Jogador vs Jogador Botão */
+/* Botão Jogador vs Jogador */
 .jogador {
     position: absolute;
     top: 20%;
@@ -728,7 +725,7 @@ html, body {
 
 
 /*----------------------------------------------*/
-/* Jogador vs IA Botão */
+/* Botão Jogador vs IA */
 .IA {
     position: absolute;
     top: 30%;
@@ -816,6 +813,7 @@ html, body {
     z-index: 10;
 }
 
+
 /*----------------------------------------------*/
 /* Dados */
 .dados-wrap {
@@ -850,7 +848,7 @@ html, body {
     background-color: #230a07;
 }
 
-/* Botão */
+/* Botão Dados */
 .baralhar-button {
     margin-top: 10px;
     padding: 0.7em 1.4em;
@@ -877,8 +875,9 @@ html, body {
         inset 0 2px 4px rgba(0, 0, 0, 0.25);
 }
 
+
 /*----------------------------------------------*/
-/* Desistir Botão */
+/* Botão Desistir */
 .desistir-button {
     position: absolute;
     top: 43%;
@@ -966,11 +965,13 @@ html, body {
 .tabuleiro div.hl {
     position: relative;  
     z-index: 10;  
-
+    outline: 3px solid #e6b97e;
+    box-shadow: 0 0 0 2px #2a1b10 inset;
+    cursor: pointer;
 }
 
 /* Painel de mensagens no canto inferior esquerdo */
-#msgPanel {
+.msgPanel {
     position: fixed;
     left: 16px;
     bottom: 16px;
@@ -987,7 +988,7 @@ html, body {
     z-index: 10;
 }
 
-#msgPanel #statusMsg {
+.msgPanel .statusMsg {
     font-weight: 700;
     line-height: 1.3;
     white-space: pre-line;
