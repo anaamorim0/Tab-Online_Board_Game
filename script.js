@@ -370,28 +370,24 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ---- Classificações (persistência + UI) ----
-    function saveClassification(nivelAI, vencedorColor) {
-        // Converte sempre a cor para Jogador / IA (quando aplicável)
-        const vencedor = winnerLabelForDisplay(vencedorColor);
-
+    function saveClassification(nivelAI, vencedorDisplay) {
         const classificacoes = JSON.parse(localStorage.getItem("classificacoes")) || [];
 
-        // Gera data sem vírgula
         const data = new Date()
             .toLocaleString("pt-PT", { hour12: false })
             .replace(",", "");
 
-        // Guarda o registo formatado
-        classificacoes.push({ data, nivelAI, vencedor });
+        // Guarda o registo tal como veio (já é "IA" ou "Jogador")
+        classificacoes.push({ data, nivelAI, vencedor: vencedorDisplay });
 
-        // Só mantém as últimas 10 jogadas
-        const limit = 10;
+        // Mantém só as últimas 10
+        const limit = 8;
         const classificacoesLimitadas = classificacoes.slice(-limit);
 
         localStorage.setItem("classificacoes", JSON.stringify(classificacoesLimitadas));
-
         renderClassifications();
     }
+
 
 
 
