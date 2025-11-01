@@ -275,44 +275,41 @@ document.addEventListener("DOMContentLoaded", () => {
     function toggleMsgPanel(show) {
         document.querySelector("msgPanel")?.classList.toggle("hidden", !show);
     }
-
-
-    // Quem joga agora?
+    
     function isAITurnNow() {
         return GameState.vsAI && GameState.currentPlayer === GameState.aiColorLabel;
     }
 
-    // Texto genérico "é a sua vez / é a vez da IA"
-    function turnHeaderFor(playerLabel = GameState.currentPlayer) {
-        const isAI = GameState.vsAI && playerLabel === GameState.aiColorLabel;
-        return isAI ? "É a vez da IA jogar.\n" : "É a sua vez de jogar.\n";
-    }
+    // function turnHeaderFor(playerLabel = GameState.currentPlayer) {
+    //     const isAI = GameState.vsAI && playerLabel === GameState.aiColorLabel;
+    //     return isAI ? "É a vez da IA jogar.\n" : "É a sua vez de jogar.\n";
+    // }
 
-    // Mensagem quando estamos à espera do lançamento
     function announceAwaitRoll(playerLabel = GameState.currentPlayer) {
         const isAI = GameState.vsAI && playerLabel === GameState.aiColorLabel;
         const body = isAI ? "A IA vai lançar os dados..." : "Carregue em \"Lançar Dados\".";
         setMsg(body);
     }
 
-    function buildRollMsg(value, isAI, canRepeat) {
-        const header = `Saiu ${value}\n`;
-        if (isAI) {
-            return `${header}\n- A IA lançou os dados.\n- A IA vai escolher uma peça e uma casa...`;
-        }
-        const repeatNote = canRepeat
-            ? `\n- Como tirou 1, 4 ou 6, pode voltar a lançar no fim da sua jogada.`
-            : "";
-        return `${header}\n- Escolha uma peça para jogar.${repeatNote}`;
-    }
+    // function buildRollMsg(value, isAI, canRepeat) {
+    //     const header = `Saiu ${value}\n`;
+    //     if (isAI) {
+    //         return `${header}\n- A IA lançou os dados.\n- A IA vai escolher uma peça e uma casa...`;
+    //     }
+    //     const repeatNote = canRepeat
+    //         ? `\n- Como tirou 1, 4 ou 6, pode voltar a lançar no fim da sua jogada.`
+    //         : "";
+    //     return `${header}\n- Escolha uma peça para jogar.${repeatNote}`;
+    // }
 
     function clearHighlights() {
         document.querySelectorAll(".tabuleiro div.hl").forEach(el => el.classList.remove("hl"));
     }
 
-    // state 0|1|2 = (0: nunca moveu) (1: moveu e nunca esteve na 4.ª) (2: já esteve na 4.ª)
+    // Definir constantes para os estados de progresso das peças
     const STAGE = { NOT_MOVED: 0, MOVED_NOT_LAST: 1, HAS_BEEN_LAST: 2 };
 
+    // Estado global do jogo
     const GameState = {
         mode: "awaitRoll",
         currentPlayer: "Azul",
@@ -324,7 +321,7 @@ document.addEventListener("DOMContentLoaded", () => {
         vsAI: false,
         aiColorLabel: "Vermelho",
         aiDifficulty: "Fácil",
-        mustPass: false,     // ← novo: estamos num turno sem jogadas possíveis
+        mustPass: false,
         nextPlayer: null, 
         inGame: false,
         aiTimer: null,
@@ -333,13 +330,11 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     function winnerLabelForDisplay(winnerColor) {
-        // Em PvP mantemos as cores; em vsIA mapeamos para "Jogador"/"IA"
         if (!GameState.vsAI) return winnerColor;
         return (winnerColor === GameState.aiColorLabel) ? "IA" : "Jogador";
     }
 
-
-    // helper (mete isto perto do defer)
+    // Helper para agendar a próxima ação da IA com delay controlado
     function scheduleAI(ms) {
         if (!GameState.vsAI) return;
         if (GameState.aiTimer) clearTimeout(GameState.aiTimer);
@@ -349,7 +344,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }, ms);
     }
 
-    // ---- Classificações (persistência + UI) ----
+    // Classificações
     function saveClassification(nivelAI, vencedorDisplay) {
         const classificacoes = JSON.parse(localStorage.getItem("classificacoes")) || [];
 
@@ -357,10 +352,8 @@ document.addEventListener("DOMContentLoaded", () => {
             .toLocaleString("pt-PT", { hour12: false })
             .replace(",", "");
 
-        // Guarda o registo tal como veio (já é "IA" ou "Jogador")
         classificacoes.push({ data, nivelAI, vencedor: vencedorDisplay });
 
-        // Mantém só as últimas 10
         const limit = 8;
         const classificacoesLimitadas = classificacoes.slice(-limit);
 
@@ -376,7 +369,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const list = JSON.parse(localStorage.getItem("classificacoes")) || [];
 
-        // último → primeiro (mais recentes em cima)
         const rows = [...list].reverse();
 
         tbody.innerHTML = "";
@@ -390,13 +382,10 @@ document.addEventListener("DOMContentLoaded", () => {
             tbody.appendChild(tr);
         });
 
-        // botão ativo só quando há dados
         if (clearBtn) clearBtn.disabled = list.length === 0;
     }
 
-
-
-    //volta ao ecrã de seleção de modo e reinicia o tabuleiro
+    // Restart do jogo
     function restartToModeSelection() {
         jogador.classList.remove("hidden");
         ia.classList.remove("hidden");
@@ -423,6 +412,8 @@ document.addEventListener("DOMContentLoaded", () => {
         updateRollUI();
     }
 
+    // Menu Configurações 
+    // Nível IA
     const nivelAISelect = document.querySelector(".nivelAI");
     if (nivelAISelect) {
         GameState.aiDifficulty = nivelAISelect.value || "Fácil";
@@ -431,7 +422,7 @@ document.addEventListener("DOMContentLoaded", () => {
             setMsg(`Nível da IA: ${GameState.aiDifficulty}`);
         });
     }
-
+    // 1º Jogador
     const firstPlayerSelect = document.querySelector(".first-player");
     function getFirstPlayer() {
         return (firstPlayerSelect?.value === "Vermelho") ? "Vermelho" : "Azul";
@@ -451,6 +442,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    // Delays da IA
     const AI_DELAY = { ROLL: 1800, PICK: 3500, BRANCH: 2200, CHAIN: 1800 };
     function defer(fn, ms) { setTimeout(fn, ms); }
 
@@ -459,7 +451,6 @@ document.addEventListener("DOMContentLoaded", () => {
         return { vr: GameState.rows - 1 - r, vc: GameState.cols - 1 - c };
     }
 
-    // Em vs IA a perspetiva é SEMPRE Azul (humano). PvP mantém a rotação por jogador.
     function getPerspectivePlayer() {
         return "Azul";
     }
@@ -469,16 +460,14 @@ document.addEventListener("DOMContentLoaded", () => {
         return { r: GameState.rows - 1 - vr, c: GameState.cols - 1 - vc };
     }
 
+    // Atualiza o botão de Dados
     function updateRollUI() {
         const btn = document.getElementById("baralharDados");
 
-        // 👉 garantir que o botão Desistir é sempre atualizado,
-        // mesmo que a função faça return mais abaixo
         updateDesistirUI();
 
         if (!btn) return;
 
-        // 1) Fim do jogo → mostra sempre "Jogar de novo"
         if (GameState.mode === "finished") {
             btn.style.display = "";
             btn.disabled = false;
@@ -486,14 +475,13 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        // 2) Se for a vez da IA, esconde e sai já (evita flicker)
         const aiTurn = GameState.vsAI && GameState.currentPlayer === GameState.aiColorLabel;
+      
         if (aiTurn) {
             btn.style.display = "none";
             return;
         }
 
-        // 3) Caso "Passar a vez" OU "Relançar"
         if (GameState.mustPass) {
             btn.style.display = "";
             btn.disabled = false;
@@ -503,7 +491,6 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        // 4) Jogador humano e à espera de lançamento
         if (GameState.mode === "awaitRoll") {
             btn.style.display = "";
             btn.disabled = false;
@@ -511,24 +498,23 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        // 5) Outros modos → esconder
         btn.style.display = "none";
     }
 
-
+    // Atualiza botão de desistir
     function updateDesistirUI() {
         if (!desistirButton) return;
 
         const hide = !GameState.inGame || GameState.mode === "finished" || !isHumanTurnNow();
         desistirButton.classList.toggle("hidden", hide);
-        desistirButton.disabled = hide; // belt & suspenders
+        desistirButton.disabled = hide;
     }
 
-
-
+    // Regras Tabuleiro
     function dirForRow(r) { return (r === 3 || r === 1) ? +1 : -1; }
     function initialRow(owner) { return owner === "A" ? 3 : 0; }
 
+    // Validação
     function isFrontOfStartRow(r, c) {
         const cell = GameState.board[r][c];
         if (!cell) return false;
@@ -555,6 +541,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return document.querySelector(`.tabuleiro div[data-vr="${vr}"][data-vc="${vc}"]`);
     }
 
+    // Iniciaçização Tabuleiro
     function initBoardState(cols) {
         GameState.cols = cols;
         GameState.board = Array.from({ length: GameState.rows }, (_, r) =>
@@ -593,6 +580,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    // Reinicia o Tabuleiro para o número de colunas scolhido pelo utilizador
     function resetAndRender(cols) {
         initBoardState(cols);
         renderBoard();
@@ -606,7 +594,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 defer(aiMaybeAct, AI_DELAY.ROLL);
             }
             } else {
-            setMsg(""); // ainda não escolheste modo
+            setMsg("");
         }
 
         resetDiceVisual();
@@ -622,6 +610,8 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Dados
+    // qual o valor? e que regras implica?
     function lerLancamentoPaus() {
         const claros = Array.from(document.querySelectorAll(".dado"))
             .reduce((acc, d) => acc + (d.classList.contains("up") ? 1 : 0), 0);
@@ -629,7 +619,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const canRepeat = (value === 1 || value === 4 || value === 6);
         return { sum: claros, value, canRepeat };
     }
-
+    // botão
     const btnDados = document.getElementById("baralharDados");
     if (btnDados) {
         btnDados.addEventListener("click", () => {
@@ -639,7 +629,6 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             if (GameState.isRolling) return;
 
-            // Passar/Relançar sem lançar
             if (GameState.mode === "awaitRoll" && GameState.mustPass) {
             GameState.mustPass = false;
             GameState.currentPlayer = GameState.nextPlayer || GameState.currentPlayer;
@@ -650,17 +639,14 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
             }
 
-            // --- Lançamento real (animação + leitura) ---
             GameState.isRolling = true;
 
-            // animação curtinha (um único sítio a baralhar)
-            const SPINS = 8;      // nº de “baralhadas” visuais
-            const STEP  = 60;     // ms entre baralhadas
+            const SPINS = 8;
+            const STEP  = 60;
             for (let i = 0; i < SPINS; i++) {
             setTimeout(baralharDados, i * STEP);
             }
 
-            // lê o resultado uma única vez, no fim da animação
             setTimeout(() => {
             const d = lerLancamentoPaus();
             GameState.dice = d;
@@ -678,18 +664,18 @@ document.addEventListener("DOMContentLoaded", () => {
             setMsg(msg);
             clearHighlights();
             updateRollUI();
-            // 👉 só destacamos peças quando for a vez do humano
             if (!isAITurnNow()) {
                 highlightMoveablePieces();
             }
 
-            GameState.isRolling = false;        // <- só aqui voltamos a permitir novo lance
-            scheduleAI(AI_DELAY.PICK);          // se for IA, segue para escolher peça
+            GameState.isRolling = false;
+            scheduleAI(AI_DELAY.PICK);
             }, SPINS * STEP + 10);
         });
     }
 
     function meOwner(label) { return label === "Azul" ? "A" : "V"; }
+    // Validação
     function onFourthRow(r, owner) { return (owner === "A" && r === 0) || (owner === "V" && r === 3); }
     function hasOwnInInitialRow(owner) {
         const row = initialRow(owner);
@@ -708,6 +694,8 @@ document.addEventListener("DOMContentLoaded", () => {
         return !v || v.owner !== me;
     }
 
+    // Jogo
+    // Cálculo do destino das peças 
     function possibleAdvanceFrom(r, c, steps) {
         const piece = GameState.board[r][c];
         if (!piece) return { r: null, c: null, needsChoice: false };
@@ -763,7 +751,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         return { r: end.r, c: end.c, needsChoice: false };
                         }
                     }
-                } else { // owner === "V"
+                } else { 
                     if (curR === 1) { curR = 2; rem--; continue; }
                     if (curR === 2) {
                         const up   = (piece.stage === STAGE.HAS_BEEN_LAST) ? null : { r: 3, c: curC };
@@ -787,21 +775,21 @@ document.addEventListener("DOMContentLoaded", () => {
         return { r: curR, c: curC, needsChoice: false };
     }
 
-    function walkSteps(r, c, rem) {
-        let curR = r, curC = c, steps = rem;
-        while (steps > 0) {
-            const d = dirForRow(curR);
-            if (d === +1 && curC < GameState.cols - 1) { curC++; steps--; continue; }
-            if (d === -1 && curC > 0) { curC--; steps--; continue; }
-            if (steps > 0) {
-                if (curR === 3) { curR = 2; steps--; }
-                else if (curR === 2) { curR = 1; steps--; }
-                else if (curR === 1) { curR = 0; steps--; }
-                else if (curR === 0) { curR = 1; steps--; }
-            }
-        }
-        return { r: curR, c: curC };
-    }
+    // function walkSteps(r, c, rem) {
+    //     let curR = r, curC = c, steps = rem;
+    //     while (steps > 0) {
+    //         const d = dirForRow(curR);
+    //         if (d === +1 && curC < GameState.cols - 1) { curC++; steps--; continue; }
+    //         if (d === -1 && curC > 0) { curC--; steps--; continue; }
+    //         if (steps > 0) {
+    //             if (curR === 3) { curR = 2; steps--; }
+    //             else if (curR === 2) { curR = 1; steps--; }
+    //             else if (curR === 1) { curR = 0; steps--; }
+    //             else if (curR === 0) { curR = 1; steps--; }
+    //         }
+    //     }
+    //     return { r: curR, c: curC };
+    // }
 
     function displayCoords(r, c) {
         const persp = getPerspectivePlayer();
@@ -845,18 +833,16 @@ document.addEventListener("DOMContentLoaded", () => {
         return n;
     }
 
+    // Fim do jogo
     function checkWin() {
         const a = countPieces("A");
         const v = countPieces("V");
 
         if (a === 0 || v === 0) {
-            // Determina cor vencedora
             const winnerColor = a > 0 ? "Azul" : "Vermelho";
 
-            // Usa a função que já converte para "Jogador"/"IA" no modo vs AI
             const winnerDisplay = winnerLabelForDisplay(winnerColor);
 
-            // Mostra mensagem final
             setMsg(`Fim do jogo!\n${winnerDisplay} ganhou!`);
 
             GameState.mode = "finished";
@@ -866,7 +852,6 @@ document.addEventListener("DOMContentLoaded", () => {
             updateRollUI();
             updateDesistirUI();
 
-            // Guarda nas classificações
             try {
             const nivel = GameState.vsAI ? (GameState.aiDifficulty || "Fácil") : "PvP";
             saveClassification(nivel, winnerDisplay);
@@ -878,10 +863,10 @@ document.addEventListener("DOMContentLoaded", () => {
         return false;
     }
 
-
     function endTurnOrRepeat() {
         const repeated = GameState.dice.canRepeat;
         GameState.dice = { sum: null, value: null, canRepeat: false };
+
         if (repeated) {
             GameState.mode = "awaitRoll";
             announceAwaitRoll(GameState.currentPlayer);
@@ -895,12 +880,12 @@ document.addEventListener("DOMContentLoaded", () => {
             renderBoard();
         }
        
-
         updateRollUI();
         scheduleAI(AI_DELAY.CHAIN);
 
     }
 
+    // Destaca peças com jogadas possíveis
     function highlightCells(modelCells) {
         clearHighlights();
         const persp = getPerspectivePlayer();
@@ -939,15 +924,13 @@ document.addEventListener("DOMContentLoaded", () => {
             const v = GameState.dice.value;
 
             if (GameState.dice.canRepeat) {
-                // Mantém o mesmo jogador para relançar
                 GameState.nextPlayer = GameState.currentPlayer;
                 setMsg(
                 `Saiu ${v}.\n` +
                 `Não é uma jogada válida.\n` +
-                `Como saiu ${v}, ${isAI ? "a IA" : "lanca"} de novo o dado.`
+                `Como saiu ${v}, ${isAI ? "a IA" : "lança"} de novo o dado.`
                 );
             } else {
-                // Passa a vez para o outro
                 GameState.nextPlayer = (GameState.currentPlayer === "Azul") ? "Vermelho" : "Azul";
                 setMsg(
                 `Saiu ${v}.\n` +
@@ -962,13 +945,10 @@ document.addEventListener("DOMContentLoaded", () => {
             renderBoard();
             updateRollUI();
 
-            // 🔧 Agenda imediatamente o próximo passo da IA
             if (isAI) {
                 if (GameState.nextPlayer === GameState.currentPlayer) {
-                // IA vai relançar
                 scheduleAI(AI_DELAY.ROLL);
                 } else {
-                // IA passa a vez e o humano entra
                 scheduleAI(AI_DELAY.CHAIN);
                 }
             }
@@ -976,6 +956,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    // IA 
+    // Heurística de progresso para a IA 
     function progressHeuristic(ownerChar, from, to) {
         const rowScore = ownerChar === "A" ? (3 - to.r) : (to.r - 0);
         const d = dirForRow(from.r);
@@ -984,6 +966,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return rowScore * 100 + horizGain * 5 + branchBonus;
     }
 
+    // Geração de jogadas
     function enumerateMovesFrom(r, c, steps, playerLabel) {
         const piece = GameState.board[r][c];
         const moves = [];
@@ -1016,7 +999,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const probe = possibleAdvanceFrom(r, c, steps);
         if (probe.needsChoice) {
             for (const opt of probe.options) {
-                const end = walkStepsOwner(me, opt.r, opt.c, probe.remaining); // "me" é "A" ou "V"
+                const end = walkStepsOwner(me, opt.r, opt.c, probe.remaining); 
                 if (end.r == null) continue;
                 if (!canLand(end.r, end.c)) continue;
                 const cap = !!(GameState.board[end.r][end.c] && GameState.board[end.r][end.c].owner !== me);
@@ -1029,8 +1012,6 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             return moves;
         }
-
-
 
         if (probe.r != null && canLand(probe.r, probe.c)) {
             const cap = !!(GameState.board[probe.r][probe.c] && GameState.board[probe.r][probe.c].owner !== me);
@@ -1051,7 +1032,9 @@ document.addEventListener("DOMContentLoaded", () => {
         return out;
     }
 
-    // Fácil: evita capturar; Médio: aleatório; Difícil: captura primeiro, senão maior progresso
+    // Nível Fácil: evita capturar
+    // Nível Médio: aleatório
+    // Nível Difícil: captura primeiro, senão escolhe a jogada com maior progresso 
     function aiPickMove(moves, difficulty) {
         if (!moves.length) return null;
 
@@ -1083,11 +1066,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 (!GameState.vsAI || GameState.currentPlayer !== GameState.aiColorLabel);
     }
 
-
+    // Executa ação da IA 
     function aiMaybeAct() {
         if (!isAITurn()) return;
 
-        // Se ainda estiver a "rolar", aguarda um pouco
         if (GameState.isRolling) {
             scheduleAI(300);
             return;
@@ -1095,16 +1077,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (GameState.mode === "awaitRoll") {
             if (GameState.mustPass) {
-            // "Passar" ou "Relançar" é tratado via botão → simula o clique
             const btn = document.getElementById("baralharDados");
             if (btn && !btn.disabled) btn.click();
-            // o handler do botão já agenda o próximo passo
             return;
             }
-            // Lançar dados (simula clique no botão)
             const btn = document.getElementById("baralharDados");
             if (btn && !btn.disabled) {
-            btn.click(); // o handler agenda o PICK
+            btn.click();
             } else {
             scheduleAI(300);
             }
@@ -1120,9 +1099,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     setMsg(
                     `Saiu ${v}.\n` +
                     `Não é uma jogada válida.\n` +
-                    `Como saiu ${v}, a IA lanca de novo o dado.`
+                    `Como saiu ${v}, a IA lança de novo o dado.`
                     );
-                    // mantém o mesmo jogador para relançar
                     GameState.mode = "awaitRoll";
                     GameState.mustPass = true;
                     GameState.nextPlayer = GameState.currentPlayer;
@@ -1158,6 +1136,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    // Movimento das peças
     function walkStepsOwner(ownerChar, startR, startC, rem) {
         let curR = startR, curC = startC, steps = rem;
         while (steps > 0) {
@@ -1169,7 +1148,6 @@ document.addEventListener("DOMContentLoaded", () => {
             curC += d; steps--; continue;
             }
 
-            // transição vertical depende do lado do dono
             curR = (ownerChar === "A")
             ? (curR === 3 ? 2 : curR === 2 ? 1 : curR === 1 ? 0 : 1)
             : (curR === 0 ? 1 : curR === 1 ? 2 : curR === 2 ? 3 : 2);
@@ -1178,16 +1156,15 @@ document.addEventListener("DOMContentLoaded", () => {
         return { r: curR, c: curC };
     }
 
-
+    // Clicks no tabuleiro
+    // controla a seleção da peça pelo utilizador; escolhe a bifurcação e o destino final 
     function onCellClick(e) {
         const vr = parseInt(e.currentTarget.dataset.vr, 10);
         const vc = parseInt(e.currentTarget.dataset.vc, 10);
         const persp = getPerspectivePlayer();
         const { r, c } = fromView(vr, vc, persp);
 
-        // se for a vez da IA, ignorar input do utilizador
         if (isAITurnNow()) return;
-
 
         if (GameState.mode === "finished") return;
 
@@ -1196,21 +1173,20 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        function nextRowForOwner(ownerChar, curR) {
-            if (ownerChar === "A") {
-                if (curR === 3) return 2;
-                if (curR === 2) return 1;
-                if (curR === 1) return 0;
-                if (curR === 0) return 1;
-            } else {
-                if (curR === 0) return 1;
-                if (curR === 1) return 2;
-                if (curR === 2) return 3;
-                if (curR === 3) return 2;
-            }
-            return curR;
-        }
-
+        // function nextRowForOwner(ownerChar, curR) {
+        //     if (ownerChar === "A") {
+        //         if (curR === 3) return 2;
+        //         if (curR === 2) return 1;
+        //         if (curR === 1) return 0;
+        //         if (curR === 0) return 1;
+        //     } else {
+        //         if (curR === 0) return 1;
+        //         if (curR === 1) return 2;
+        //         if (curR === 2) return 3;
+        //         if (curR === 3) return 2;
+        //     }
+        //     return curR;
+        // }
 
         function fixBranchOptionsForOwner(ownerChar, options) {
             if (ownerChar === "A") return options;
@@ -1247,12 +1223,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 const fixedOpts = fixBranchOptionsForOwner(piece.owner, dest.options);
                 GameState.selected = { r, c, remaining: dest.remaining, options: fixedOpts };
 
-                // 👉 calcular o DESTINO FINAL de cada ramificação (depois de gastar 'remaining')
                 const endsResolved = fixedOpts
                     .map(o => ({ end: walkStepsOwner(piece.owner, o.r, o.c, dest.remaining) }))
-                    .filter(p => canLand(p.end.r, p.end.c)); // só destinos pousáveis
+                    .filter(p => canLand(p.end.r, p.end.c));
 
-                // se por acaso nenhuma ramificação tiver destino válido, aborta
                 if (endsResolved.length === 0) {
                     setMsg("Jogada inválida.");
                     GameState.mode = "awaitPiece";
@@ -1261,7 +1235,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     return;
                 }
 
-                // 👉 destacar as casas de DESTINO FINAL (não as de entrada)
                 const endsView = endsResolved.map(p => toView(p.end.r, p.end.c, persp));
                 clearHighlights();
                 endsView.forEach(({ vr, vc }) => {
@@ -1285,12 +1258,10 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        // Escolha após bifurcação (sair da 3.ª linha)
         if (GameState.mode === "awaitDestination") {
             const from = GameState.selected;
             if (!from) { GameState.mode = "awaitPiece"; return; }
 
-            // cancelar a seleção clicando na própria peça
             if (r === from.r && c === from.c) {
                 GameState.selected = null;
                 GameState.mode = "awaitPiece";
@@ -1306,13 +1277,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const clickedModel = fromView(vr, vc, persp);
 
-            // 👉 resolver os DESTINOS FINAIS de cada opção com o remaining guardado
             const resolved = options.map(o => ({
                 entry: o,
                 end: walkStepsOwner(ownerChar, o.r, o.c, from.remaining)
             }));
 
-            // 👉 agora escolhemos pela casa de DESTINO FINAL
             const picked = resolved.find(p => p.end.r === clickedModel.r && p.end.c === clickedModel.c);
 
             if (!picked) {
@@ -1323,7 +1292,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            // destino já calculado
             const end = picked.end;
             if (!canLand(end.r, end.c)) {
                 setMsg("Destino inválido. Clica na peça para cancelar.");
