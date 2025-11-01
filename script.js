@@ -89,23 +89,23 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!isHumanTurnNow()) return;
 
             const winnerColor = GameState.vsAI
-            ? GameState.aiColorLabel
-            : (GameState.currentPlayer === "Azul" ? "Vermelho" : "Azul");
+                ? GameState.aiColorLabel
+                : (GameState.currentPlayer === "Azul" ? "Vermelho" : "Azul");
             const winnerDisplay = winnerLabelForDisplay(winnerColor);
 
             try {
-            const nivel = GameState.vsAI ? (GameState.aiDifficulty || "Fácil") : "PvP";
-            saveClassification(nivel, winnerDisplay);
-            if (!classMenu.classList.contains("hidden")) renderClassifications();
-            } catch (_) {}
+                const nivel = GameState.vsAI ? (GameState.aiDifficulty || "Fácil") : "PvP";
+                saveClassification(nivel, winnerDisplay);
+                if (!classMenu.classList.contains("hidden")) renderClassifications();
+            } catch (_) { }
 
-            const DESISTIR_DELAY = 1200; 
+            const DESISTIR_DELAY = 1200;
             setMsgTemp(`Jogador desistiu do jogo.\n${winnerDisplay} ganhou.`, DESISTIR_DELAY);
 
             setTimeout(() => {
-            restartToModeSelection();
-            desistirButton.classList.add("hidden");
-            updateDesistirUI();
+                restartToModeSelection();
+                desistirButton.classList.add("hidden");
+                updateDesistirUI();
             }, DESISTIR_DELAY);
         });
     }
@@ -121,7 +121,7 @@ document.addEventListener("DOMContentLoaded", () => {
             regrasIcon.src = "img/regras_logo.png";
         }
     });
- 
+
     (function () {
         const container = document.getElementById("regrasContent");
         if (!container) return;
@@ -150,7 +150,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
     })();
-    
+
     // Jogador vs Jogador
     jogador.addEventListener("click", () => {
         jogador.classList.add("hidden");
@@ -197,7 +197,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (GameState.currentPlayer === GameState.aiColorLabel) {
             setMsg("A IA vai lançar os dados...");
-            defer(aiMaybeAct, AI_DELAY.ROLL);
+            scheduleAI(AI_DELAY.ROLL);
         } else {
             setMsg('Carregue em "Lançar Dados".');
         }
@@ -222,7 +222,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Classificações: atualiza a tabela e desativa o botão
     const clearBtn = document.getElementById("clearButton");
-        if (clearBtn) {
+    if (clearBtn) {
         clearBtn.addEventListener("click", () => {
 
             localStorage.removeItem("classificacoes");
@@ -273,34 +273,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function toggleMsgPanel(show) {
-        document.querySelector("msgPanel")?.classList.toggle("hidden", !show);
+        document.querySelector(".msgPanel")?.classList.toggle("hidden", !show);
     }
-    
-    function isAITurnNow() {
-        return GameState.vsAI && GameState.currentPlayer === GameState.aiColorLabel;
-    }
-
-    // function turnHeaderFor(playerLabel = GameState.currentPlayer) {
-    //     const isAI = GameState.vsAI && playerLabel === GameState.aiColorLabel;
-    //     return isAI ? "É a vez da IA jogar.\n" : "É a sua vez de jogar.\n";
-    // }
 
     function announceAwaitRoll(playerLabel = GameState.currentPlayer) {
         const isAI = GameState.vsAI && playerLabel === GameState.aiColorLabel;
         const body = isAI ? "A IA vai lançar os dados..." : "Carregue em \"Lançar Dados\".";
         setMsg(body);
     }
-
-    // function buildRollMsg(value, isAI, canRepeat) {
-    //     const header = `Saiu ${value}\n`;
-    //     if (isAI) {
-    //         return `${header}\n- A IA lançou os dados.\n- A IA vai escolher uma peça e uma casa...`;
-    //     }
-    //     const repeatNote = canRepeat
-    //         ? `\n- Como tirou 1, 4 ou 6, pode voltar a lançar no fim da sua jogada.`
-    //         : "";
-    //     return `${header}\n- Escolha uma peça para jogar.${repeatNote}`;
-    // }
 
     function clearHighlights() {
         document.querySelectorAll(".tabuleiro div.hl").forEach(el => el.classList.remove("hl"));
@@ -322,11 +302,11 @@ document.addEventListener("DOMContentLoaded", () => {
         aiColorLabel: "Vermelho",
         aiDifficulty: "Fácil",
         mustPass: false,
-        nextPlayer: null, 
+        nextPlayer: null,
         inGame: false,
         aiTimer: null,
         isRolling: false,
-        stats: { startTime: null, moves: 0 }  
+        stats: { startTime: null, moves: 0 }
     };
 
     function winnerLabelForDisplay(winnerColor) {
@@ -437,14 +417,13 @@ document.addEventListener("DOMContentLoaded", () => {
             announceAwaitRoll(GameState.currentPlayer);
             updateRollUI();
             if (GameState.vsAI && GameState.currentPlayer === GameState.aiColorLabel && GameState.mode === "awaitRoll") {
-                defer(aiMaybeAct, AI_DELAY.ROLL);
+                scheduleAI(AI_DELAY.ROLL);
             }
         }
     });
 
     // Delays da IA
     const AI_DELAY = { ROLL: 1800, PICK: 3500, BRANCH: 2200, CHAIN: 1800 };
-    function defer(fn, ms) { setTimeout(fn, ms); }
 
     function toView(r, c, player) {
         if (player === "Azul") return { vr: r, vc: c };
@@ -476,7 +455,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         const aiTurn = GameState.vsAI && GameState.currentPlayer === GameState.aiColorLabel;
-      
+
         if (aiTurn) {
             btn.style.display = "none";
             return;
@@ -486,8 +465,8 @@ document.addEventListener("DOMContentLoaded", () => {
             btn.style.display = "";
             btn.disabled = false;
             btn.textContent = (GameState.nextPlayer === GameState.currentPlayer)
-            ? "Lançar Dados"
-            : "Passar a vez";
+                ? "Lançar Dados"
+                : "Passar a vez";
             return;
         }
 
@@ -591,9 +570,9 @@ document.addEventListener("DOMContentLoaded", () => {
         if (GameState.inGame) {
             announceAwaitRoll(GameState.currentPlayer);
             if (GameState.vsAI && GameState.currentPlayer === GameState.aiColorLabel) {
-                defer(aiMaybeAct, AI_DELAY.ROLL);
+                scheduleAI(AI_DELAY.ROLL);
             }
-            } else {
+        } else {
             setMsg("");
         }
 
@@ -624,52 +603,52 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnDados) {
         btnDados.addEventListener("click", () => {
             if (GameState.mode === "finished") {
-            restartToModeSelection();
-            return;
+                restartToModeSelection();
+                return;
             }
             if (GameState.isRolling) return;
 
             if (GameState.mode === "awaitRoll" && GameState.mustPass) {
-            GameState.mustPass = false;
-            GameState.currentPlayer = GameState.nextPlayer || GameState.currentPlayer;
-            GameState.nextPlayer = null;
-            announceAwaitRoll(GameState.currentPlayer);
-            updateRollUI();
-            scheduleAI(AI_DELAY.CHAIN);
-            return;
+                GameState.mustPass = false;
+                GameState.currentPlayer = GameState.nextPlayer || GameState.currentPlayer;
+                GameState.nextPlayer = null;
+                announceAwaitRoll(GameState.currentPlayer);
+                updateRollUI();
+                scheduleAI(AI_DELAY.CHAIN);
+                return;
             }
 
             GameState.isRolling = true;
 
             const SPINS = 8;
-            const STEP  = 60;
+            const STEP = 60;
             for (let i = 0; i < SPINS; i++) {
-            setTimeout(baralharDados, i * STEP);
+                setTimeout(baralharDados, i * STEP);
             }
 
             setTimeout(() => {
-            const d = lerLancamentoPaus();
-            GameState.dice = d;
-            GameState.mode = "awaitPiece";
-            GameState.selected = null;
+                const d = lerLancamentoPaus();
+                GameState.dice = d;
+                GameState.mode = "awaitPiece";
+                GameState.selected = null;
 
-            let msg = `Saiu ${d.value}.\n`;
+                let msg = `Saiu ${d.value}.\n`;
 
-            msg += (GameState.vsAI && GameState.currentPlayer === GameState.aiColorLabel)
-                ? "A IA vai escolher uma peça para jogar."
-                : "Escolha uma peça para jogar.";
+                msg += (GameState.vsAI && GameState.currentPlayer === GameState.aiColorLabel)
+                    ? "A IA vai escolher uma peça para jogar."
+                    : "Escolha uma peça para jogar.";
 
-            if (d.canRepeat) msg += `\nComo saiu ${d.value} pode voltar a lançar os dados.\n`;
+                if (d.canRepeat) msg += `\nComo saiu ${d.value} pode voltar a lançar os dados.\n`;
 
-            setMsg(msg);
-            clearHighlights();
-            updateRollUI();
-            if (!isAITurnNow()) {
-                highlightMoveablePieces();
-            }
+                setMsg(msg);
+                clearHighlights();
+                updateRollUI();
+                if (!isAITurnNow()) {
+                    highlightMoveablePieces();
+                }
 
-            GameState.isRolling = false;
-            scheduleAI(AI_DELAY.PICK);
+                GameState.isRolling = false;
+                scheduleAI(AI_DELAY.PICK);
             }, SPINS * STEP + 10);
         });
     }
@@ -738,33 +717,33 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (piece.owner === "A") {
                     if (curR === 2) { curR = 1; rem--; continue; }
                     if (curR === 1) {
-                        const up   = (piece.stage === STAGE.HAS_BEEN_LAST) ? null : { r: 0, c: curC };
+                        const up = (piece.stage === STAGE.HAS_BEEN_LAST) ? null : { r: 0, c: curC };
                         const down = { r: 2, c: curC };
                         const opts = [];
                         if (up) opts.push(up);
                         opts.push(down);
 
                         if (opts.length > 1) {
-                        return { needsChoice: true, options: opts, remaining: rem - 1 };
+                            return { needsChoice: true, options: opts, remaining: rem - 1 };
                         } else {
-                        const end = walkStepsOwner("A", opts[0].r, opts[0].c, rem - 1);
-                        return { r: end.r, c: end.c, needsChoice: false };
+                            const end = walkStepsOwner("A", opts[0].r, opts[0].c, rem - 1);
+                            return { r: end.r, c: end.c, needsChoice: false };
                         }
                     }
-                } else { 
+                } else {
                     if (curR === 1) { curR = 2; rem--; continue; }
                     if (curR === 2) {
-                        const up   = (piece.stage === STAGE.HAS_BEEN_LAST) ? null : { r: 3, c: curC };
+                        const up = (piece.stage === STAGE.HAS_BEEN_LAST) ? null : { r: 3, c: curC };
                         const down = { r: 1, c: curC };
                         const opts = [];
                         if (up) opts.push(up);
                         opts.push(down);
 
                         if (opts.length > 1) {
-                        return { needsChoice: true, options: opts, remaining: rem - 1 };
+                            return { needsChoice: true, options: opts, remaining: rem - 1 };
                         } else {
-                        const end = walkStepsOwner("V", opts[0].r, opts[0].c, rem - 1);
-                        return { r: end.r, c: end.c, needsChoice: false };
+                            const end = walkStepsOwner("V", opts[0].r, opts[0].c, rem - 1);
+                            return { r: end.r, c: end.c, needsChoice: false };
                         }
                     }
                 }
@@ -774,22 +753,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         return { r: curR, c: curC, needsChoice: false };
     }
-
-    // function walkSteps(r, c, rem) {
-    //     let curR = r, curC = c, steps = rem;
-    //     while (steps > 0) {
-    //         const d = dirForRow(curR);
-    //         if (d === +1 && curC < GameState.cols - 1) { curC++; steps--; continue; }
-    //         if (d === -1 && curC > 0) { curC--; steps--; continue; }
-    //         if (steps > 0) {
-    //             if (curR === 3) { curR = 2; steps--; }
-    //             else if (curR === 2) { curR = 1; steps--; }
-    //             else if (curR === 1) { curR = 0; steps--; }
-    //             else if (curR === 0) { curR = 1; steps--; }
-    //         }
-    //     }
-    //     return { r: curR, c: curC };
-    // }
 
     function displayCoords(r, c) {
         const persp = getPerspectivePlayer();
@@ -853,9 +816,9 @@ document.addEventListener("DOMContentLoaded", () => {
             updateDesistirUI();
 
             try {
-            const nivel = GameState.vsAI ? (GameState.aiDifficulty || "Fácil") : "PvP";
-            saveClassification(nivel, winnerDisplay);
-            if (!classMenu.classList.contains("hidden")) renderClassifications();
+                const nivel = GameState.vsAI ? (GameState.aiDifficulty || "Fácil") : "PvP";
+                saveClassification(nivel, winnerDisplay);
+                if (!classMenu.classList.contains("hidden")) renderClassifications();
             } catch (_) { /* silencioso */ }
 
             return true;
@@ -879,7 +842,7 @@ document.addEventListener("DOMContentLoaded", () => {
             clearHighlights();
             renderBoard();
         }
-       
+
         updateRollUI();
         scheduleAI(AI_DELAY.CHAIN);
 
@@ -926,16 +889,16 @@ document.addEventListener("DOMContentLoaded", () => {
             if (GameState.dice.canRepeat) {
                 GameState.nextPlayer = GameState.currentPlayer;
                 setMsg(
-                `Saiu ${v}.\n` +
-                `Não é uma jogada válida.\n` +
-                `Como saiu ${v}, ${isAI ? "a IA" : "lança"} de novo o dado.`
+                    `Saiu ${v}.\n` +
+                    `Não é uma jogada válida.\n` +
+                    `Como saiu ${v}, ${isAI ? "a IA" : "lança"} de novo o dado.`
                 );
             } else {
                 GameState.nextPlayer = (GameState.currentPlayer === "Azul") ? "Vermelho" : "Azul";
                 setMsg(
-                `Saiu ${v}.\n` +
-                `Não é uma jogada válida.\n` +
-                `${isAI ? "A IA passa a vez." : "Clique em 'Passar a vez'."}`
+                    `Saiu ${v}.\n` +
+                    `Não é uma jogada válida.\n` +
+                    `${isAI ? "A IA passa a vez." : "Clique em 'Passar a vez'."}`
                 );
             }
 
@@ -947,9 +910,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (isAI) {
                 if (GameState.nextPlayer === GameState.currentPlayer) {
-                scheduleAI(AI_DELAY.ROLL);
+                    scheduleAI(AI_DELAY.ROLL);
                 } else {
-                scheduleAI(AI_DELAY.CHAIN);
+                    scheduleAI(AI_DELAY.CHAIN);
                 }
             }
             return;
@@ -999,15 +962,15 @@ document.addEventListener("DOMContentLoaded", () => {
         const probe = possibleAdvanceFrom(r, c, steps);
         if (probe.needsChoice) {
             for (const opt of probe.options) {
-                const end = walkStepsOwner(me, opt.r, opt.c, probe.remaining); 
+                const end = walkStepsOwner(me, opt.r, opt.c, probe.remaining);
                 if (end.r == null) continue;
                 if (!canLand(end.r, end.c)) continue;
                 const cap = !!(GameState.board[end.r][end.c] && GameState.board[end.r][end.c].owner !== me);
                 moves.push({
-                from: { r, c },
-                to: { r: end.r, c: end.c },
-                capture: cap,
-                progress: progressHeuristic(me, { r, c }, { r: end.r, c: end.c }),
+                    from: { r, c },
+                    to: { r: end.r, c: end.c },
+                    capture: cap,
+                    progress: progressHeuristic(me, { r, c }, { r: end.r, c: end.c }),
                 });
             }
             return moves;
@@ -1057,18 +1020,18 @@ document.addEventListener("DOMContentLoaded", () => {
         return sorted[0];
     }
 
-    function isAITurn() {
+    function isAITurnNow() {
         return GameState.vsAI && GameState.currentPlayer === GameState.aiColorLabel && GameState.mode !== "finished";
     }
 
     function isHumanTurnNow() {
         return GameState.inGame &&
-                (!GameState.vsAI || GameState.currentPlayer !== GameState.aiColorLabel);
+            (!GameState.vsAI || GameState.currentPlayer !== GameState.aiColorLabel);
     }
 
     // Executa ação da IA 
     function aiMaybeAct() {
-        if (!isAITurn()) return;
+        if (!isAITurnNow()) return;
 
         if (GameState.isRolling) {
             scheduleAI(300);
@@ -1077,15 +1040,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (GameState.mode === "awaitRoll") {
             if (GameState.mustPass) {
-            const btn = document.getElementById("baralharDados");
-            if (btn && !btn.disabled) btn.click();
-            return;
+                const btn = document.getElementById("baralharDados");
+                if (btn && !btn.disabled) btn.click();
+                return;
             }
             const btn = document.getElementById("baralharDados");
             if (btn && !btn.disabled) {
-            btn.click();
+                btn.click();
             } else {
-            scheduleAI(300);
+                scheduleAI(300);
             }
             return;
         }
@@ -1097,9 +1060,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 const v = d;
                 if (GameState.dice.canRepeat) {
                     setMsg(
-                    `Saiu ${v}.\n` +
-                    `Não é uma jogada válida.\n` +
-                    `Como saiu ${v}, a IA lança de novo o dado.`
+                        `Saiu ${v}.\n` +
+                        `Não é uma jogada válida.\n` +
+                        `Como saiu ${v}, a IA lança de novo o dado.`
                     );
                     GameState.mode = "awaitRoll";
                     GameState.mustPass = true;
@@ -1111,9 +1074,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     scheduleAI(AI_DELAY.ROLL);
                 } else {
                     setMsg(
-                    `Saiu ${v}.\n` +
-                    `Não é uma jogada válida.\n` +
-                    `A IA passa a vez.`
+                        `Saiu ${v}.\n` +
+                        `Não é uma jogada válida.\n` +
+                        `A IA passa a vez.`
                     );
                     GameState.mode = "awaitRoll";
                     GameState.mustPass = true;
@@ -1142,15 +1105,15 @@ document.addEventListener("DOMContentLoaded", () => {
         while (steps > 0) {
             const d = dirForRow(curR);
             const canRight = (d === +1 && curC < GameState.cols - 1);
-            const canLeft  = (d === -1 && curC > 0);
+            const canLeft = (d === -1 && curC > 0);
 
             if ((d === +1 && canRight) || (d === -1 && canLeft)) {
-            curC += d; steps--; continue;
+                curC += d; steps--; continue;
             }
 
             curR = (ownerChar === "A")
-            ? (curR === 3 ? 2 : curR === 2 ? 1 : curR === 1 ? 0 : 1)
-            : (curR === 0 ? 1 : curR === 1 ? 2 : curR === 2 ? 3 : 2);
+                ? (curR === 3 ? 2 : curR === 2 ? 1 : curR === 1 ? 0 : 1)
+                : (curR === 0 ? 1 : curR === 1 ? 2 : curR === 2 ? 3 : 2);
             steps--;
         }
         return { r: curR, c: curC };
@@ -1172,21 +1135,6 @@ document.addEventListener("DOMContentLoaded", () => {
             setMsg("Primeiro lança os dados.");
             return;
         }
-
-        // function nextRowForOwner(ownerChar, curR) {
-        //     if (ownerChar === "A") {
-        //         if (curR === 3) return 2;
-        //         if (curR === 2) return 1;
-        //         if (curR === 1) return 0;
-        //         if (curR === 0) return 1;
-        //     } else {
-        //         if (curR === 0) return 1;
-        //         if (curR === 1) return 2;
-        //         if (curR === 2) return 3;
-        //         if (curR === 3) return 2;
-        //     }
-        //     return curR;
-        // }
 
         function fixBranchOptionsForOwner(ownerChar, options) {
             if (ownerChar === "A") return options;
