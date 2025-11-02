@@ -17,13 +17,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const classMenu = document.getElementById("classMenu");
     const voltarButton = document.getElementById("voltarButton");
     const desistirButton = document.getElementById("desistirButton");
+    const clearBtn = document.getElementById("clearButton");
+
 
     const settingsIcon = settingsButton.querySelector("img");
     const loginIcon = userButton.querySelector("img");
     const regrasIcon = regrasButton.querySelector("img");
     const classIcon = classButton.querySelector("img");
 
-    // Abre a "caixa" inicial que conêm o jogo
+    // Abre a "caixa" inicial que contêm o jogo
     closedBox.addEventListener("click", () => {
         closedBox.classList.add("hidden");
         openWrap.classList.remove("hidden");
@@ -63,6 +65,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    // Menu Classificações
     classButton.addEventListener("click", () => {
         if (classMenu.classList.contains("hidden")) {
             closeAllMenus();
@@ -74,41 +77,6 @@ document.addEventListener("DOMContentLoaded", () => {
             classIcon.src = "img/classificacoes_logo.png";
         }
     });
-
-    // Botão Voltar 
-    if (voltarButton) {
-        voltarButton.addEventListener("click", () => {
-            restartToModeSelection();
-        });
-    }
-
-    // Botão Desistir; atribui vencedor, guarda classificação e recomeça
-    if (desistirButton) {
-        desistirButton.addEventListener("click", () => {
-            if (!GameState.inGame) return;
-            if (!isHumanTurnNow()) return;
-
-            const winnerColor = GameState.vsAI
-                ? GameState.aiColorLabel
-                : (GameState.currentPlayer === "Azul" ? "Vermelho" : "Azul");
-            const winnerDisplay = winnerLabelForDisplay(winnerColor);
-
-            try {
-                const nivel = GameState.vsAI ? (GameState.aiDifficulty || "Fácil") : "PvP";
-                saveClassification(nivel, winnerDisplay);
-                if (!classMenu.classList.contains("hidden")) renderClassifications();
-            } catch (_) { }
-
-            const DESISTIR_DELAY = 1200;
-            setMsgTemp(`Jogador desistiu do jogo.\n${winnerDisplay} ganhou.`, DESISTIR_DELAY);
-
-            setTimeout(() => {
-                restartToModeSelection();
-                desistirButton.classList.add("hidden");
-                updateDesistirUI();
-            }, DESISTIR_DELAY);
-        });
-    }
 
     // Menu Regras
     regrasButton.addEventListener("click", () => {
@@ -151,6 +119,13 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     })();
 
+    // Botão Voltar ao início
+    if (voltarButton) {
+        voltarButton.addEventListener("click", () => {
+            restartToModeSelection();
+        });
+    }
+
     // Jogador vs Jogador
     jogador.addEventListener("click", () => {
         jogador.classList.add("hidden");
@@ -180,7 +155,6 @@ document.addEventListener("DOMContentLoaded", () => {
         dadosWrap.classList.remove("hidden");
         desistirButton.classList.remove("hidden");
 
-        // Estado inicial
         GameState.inGame = true;
         GameState.stats.startTime = Date.now();
         GameState.stats.moves = 0;
@@ -188,7 +162,6 @@ document.addEventListener("DOMContentLoaded", () => {
         GameState.aiColorLabel = "Vermelho";
         GameState.currentPlayer = getFirstPlayer();
 
-        // Painel de Mensagens
         toggleMsgPanel(true);
 
         renderBoard();
@@ -202,6 +175,35 @@ document.addEventListener("DOMContentLoaded", () => {
             setMsg('Carregue em "Lançar Dados".');
         }
     });
+
+    // Botão Desistir - atribui vencedor, guarda classificação e recomeça
+    if (desistirButton) {
+        desistirButton.addEventListener("click", () => {
+            if (!GameState.inGame) return;
+            if (!isHumanTurnNow()) return;
+
+            const winnerColor = GameState.vsAI
+                ? GameState.aiColorLabel
+                : (GameState.currentPlayer === "Azul" ? "Vermelho" : "Azul");
+            const winnerDisplay = winnerLabelForDisplay(winnerColor);
+
+            try {
+                const nivel = GameState.vsAI ? (GameState.aiDifficulty || "Fácil") : "PvP";
+                saveClassification(nivel, winnerDisplay);
+                if (!classMenu.classList.contains("hidden")) renderClassifications();
+            } catch (_) { }
+
+            const DESISTIR_DELAY = 1200;
+            setMsgTemp(`Jogador desistiu do jogo.\n${winnerDisplay} ganhou.`, DESISTIR_DELAY);
+
+            setTimeout(() => {
+                restartToModeSelection();
+                desistirButton.classList.add("hidden");
+                updateDesistirUI();
+            }, DESISTIR_DELAY);
+        });
+    }
+
 
     // Animação Dados
     function baralharDados() {
@@ -220,17 +222,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Classificações: atualiza a tabela e desativa o botão
-    const clearBtn = document.getElementById("clearButton");
-    if (clearBtn) {
-        clearBtn.addEventListener("click", () => {
-
-            localStorage.removeItem("classificacoes");
-            renderClassifications();
-        });
-    }
-
-    // Painel de Mensagens 
+    // Mensagens 
     let statusEl = document.querySelector(".statusMsg");
     if (!statusEl) {
         let panel = document.querySelector(".msgPanel");
@@ -244,10 +236,8 @@ document.addEventListener("DOMContentLoaded", () => {
         statusEl.classList.add("statusMsg");
         panel.appendChild(statusEl);
         toggleMsgPanel(false);
-
     }
 
-    // Mensagens 
     function setMsg(t, { force = false } = {}) {
         const msgEl = document.querySelector(".statusMsg");
         if (!msgEl) return;
@@ -261,7 +251,6 @@ document.addEventListener("DOMContentLoaded", () => {
         msgEl.textContent = `${header}\n${t}`;
     }
 
-    // Mensagem temporária para garantir que o painel está visivél
     function setMsgTemp(texto, ms = 2000, { force = true } = {}) {
         toggleMsgPanel(true);
         setMsg(texto, { force });
@@ -286,7 +275,7 @@ document.addEventListener("DOMContentLoaded", () => {
         document.querySelectorAll(".tabuleiro div.hl").forEach(el => el.classList.remove("hl"));
     }
 
-    // Definir constantes para os estados de progresso das peças
+    // Constantes para os estados de progresso das peças
     const STAGE = { NOT_MOVED: 0, MOVED_NOT_LAST: 1, HAS_BEEN_LAST: 2 };
 
     // Estado global do jogo
@@ -309,6 +298,7 @@ document.addEventListener("DOMContentLoaded", () => {
         stats: { startTime: null, moves: 0 }
     };
 
+    // Definição do Vencedor conforme a cor
     function winnerLabelForDisplay(winnerColor) {
         if (!GameState.vsAI) return winnerColor;
         return (winnerColor === GameState.aiColorLabel) ? "IA" : "Jogador";
@@ -363,6 +353,14 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         if (clearBtn) clearBtn.disabled = list.length === 0;
+    }
+
+    // Classificações - atualiza a tabela
+    if (clearBtn) {
+        clearBtn.addEventListener("click", () => {
+            localStorage.removeItem("classificacoes");
+            renderClassifications();
+        });
     }
 
     // Restart do jogo
@@ -654,7 +652,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function meOwner(label) { return label === "Azul" ? "A" : "V"; }
-    // Validação
     function onFourthRow(r, owner) { return (owner === "A" && r === 0) || (owner === "V" && r === 3); }
     function hasOwnInInitialRow(owner) {
         const row = initialRow(owner);

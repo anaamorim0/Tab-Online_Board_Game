@@ -560,6 +560,8 @@ html, body {
     transform: scale(1.05); 
 }
 
+
+/*----------------------------------------------*/
 /* Menu Classificações */
 .class-menu {
     position: absolute;
@@ -586,7 +588,6 @@ html, body {
     color: #230a07;
 }
 
-/* Cartão que envolve a tabela */
 .table-card {
     flex: 1;
     display: flex;
@@ -597,13 +598,6 @@ html, body {
     overflow: hidden;
 }
 
-/* Zona de scroll da tabela */
-.table-wrap {
-    flex: 1;
-    overflow: auto;
-}
-
-/* Tabela */
 .table-class {
     width: 100%;
     border-collapse: separate;
@@ -613,7 +607,6 @@ html, body {
     border-spacing: 1.2vh 0; 
 }
 
-/* Cabeçalho fixo */
 .table-class thead th {
     position: sticky;
     top: 0;
@@ -628,7 +621,6 @@ html, body {
     z-index: 1;
 }
 
-/* Células */
 .table-class td {
     padding: 1vh 1.2vh;
     font-size: 13px;
@@ -638,8 +630,6 @@ html, body {
     word-wrap: break-word;
 }
 
-
-/* Ações no fundo */
 .class-actions {
     margin-top: auto;
     display: flex;
@@ -647,7 +637,6 @@ html, body {
     padding: 1.2vh 0 1.6vh;
 }
 
-/* Botão limpar */
 .clear-button {
     background-color: #a0522d;
     color: #fff;
@@ -848,7 +837,7 @@ html, body {
     background-color: #230a07;
 }
 
-/* Botão Dados */
+/* Botão Lançar Dados */
 .baralhar-button {
     margin-top: 10px;
     padding: 0.7em 1.4em;
@@ -970,7 +959,9 @@ html, body {
     cursor: pointer;
 }
 
-/* Painel de mensagens no canto inferior esquerdo */
+
+/*----------------------------------------------*/
+/* Mensagens */
 .msgPanel {
     position: fixed;
     left: 16px;
