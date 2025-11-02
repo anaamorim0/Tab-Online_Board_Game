@@ -35,10 +35,10 @@ document.addEventListener("DOMContentLoaded", () => {
     // Estado inicial para todos os menus 
     const closeAllMenus = () => {
         [loginMenu, settingsMenu, regrasMenu, classMenu].forEach(menu => menu.classList.add("hidden"));
-        loginIcon.src = "img/user_logo.png";
-        settingsIcon.src = "img/settings_logo.png";
-        regrasIcon.src = "img/regras_logo.png";
-        classIcon.src = "img/classificacoes_logo.png";
+        loginIcon.src = "http://www.alunos.dcc.fc.up.pt/~up202207213/img/user_logo.png";
+        settingsIcon.src = "http://www.alunos.dcc.fc.up.pt/~up202207213/img/settings_logo.png";
+        regrasIcon.src = "http://www.alunos.dcc.fc.up.pt/~up202207213/img/regras_logo.png";
+        classIcon.src = "http://www.alunos.dcc.fc.up.pt/~up202207213/img/classificacoes_logo.png";
     };
 
     // Menu Login
@@ -46,10 +46,10 @@ document.addEventListener("DOMContentLoaded", () => {
         if (loginMenu.classList.contains("hidden")) {
             closeAllMenus();
             loginMenu.classList.remove("hidden");
-            loginIcon.src = "img/user_logo_2.png";
+            loginIcon.src = "http://www.alunos.dcc.fc.up.pt/~up202207213/img/user_logo_2.png";
         } else {
             loginMenu.classList.add("hidden");
-            loginIcon.src = "img/user_logo.png";
+            loginIcon.src = "http://www.alunos.dcc.fc.up.pt/~up202207213/img/user_logo.png";
         }
     });
 
@@ -58,10 +58,10 @@ document.addEventListener("DOMContentLoaded", () => {
         if (settingsMenu.classList.contains("hidden")) {
             closeAllMenus();
             settingsMenu.classList.remove("hidden");
-            settingsIcon.src = "img/settings_logo_2.png";
+            settingsIcon.src = "http://www.alunos.dcc.fc.up.pt/~up202207213/img/settings_logo_2.png";
         } else {
             settingsMenu.classList.add("hidden");
-            settingsIcon.src = "img/settings_logo.png";
+            settingsIcon.src = "http://www.alunos.dcc.fc.up.pt/~up202207213/img/settings_logo.png";
         }
     });
 
@@ -71,10 +71,10 @@ document.addEventListener("DOMContentLoaded", () => {
             closeAllMenus();
             renderClassifications();
             classMenu.classList.remove("hidden");
-            classIcon.src = "img/classificacoes_logo_2.png";
+            classIcon.src = "http://www.alunos.dcc.fc.up.pt/~up202207213/img/classificacoes_logo_2.png";
         } else {
             classMenu.classList.add("hidden");
-            classIcon.src = "img/classificacoes_logo.png";
+            classIcon.src = "http://www.alunos.dcc.fc.up.pt/~up202207213/img/classificacoes_logo.png";
         }
     });
 
@@ -83,10 +83,10 @@ document.addEventListener("DOMContentLoaded", () => {
         if (regrasMenu.classList.contains("hidden")) {
             closeAllMenus();
             regrasMenu.classList.remove("hidden");
-            regrasIcon.src = "img/regras_logo_2.png";
+            regrasIcon.src = "http://www.alunos.dcc.fc.up.pt/~up202207213/img/regras_logo_2.png";
         } else {
             regrasMenu.classList.add("hidden");
-            regrasIcon.src = "img/regras_logo.png";
+            regrasIcon.src = "http://www.alunos.dcc.fc.up.pt/~up202207213/img/regras_logo.png";
         }
     });
 
