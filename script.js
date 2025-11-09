@@ -41,6 +41,26 @@ document.addEventListener("DOMContentLoaded", () => {
         classIcon.src = "http://www.alunos.dcc.fc.up.pt/~up202207213/img/classificacoes_logo.png";
     };
 
+    function ensurePanelVisible(panel) {
+        if (!panel) return;
+        // mede no estado atual
+        const r = panel.getBoundingClientRect();
+        const fits =
+            r.left >= 0 &&
+            r.right <= window.innerWidth &&
+            r.top >= 0 &&
+            r.bottom <= window.innerHeight;
+
+        // se não couber, ativa overlay; se couber, volta ao layout normal
+        panel.classList.toggle("panel-overlay", !fits);
+    }
+
+    window.addEventListener("resize", () => {
+        if (!regrasMenu.classList.contains("hidden")) ensurePanelVisible(regrasMenu);
+        if (!classMenu.classList.contains("hidden"))  ensurePanelVisible(classMenu);
+    });
+
+
     // Menu Login
     userButton.addEventListener("click", () => {
         if (loginMenu.classList.contains("hidden")) {
@@ -72,6 +92,7 @@ document.addEventListener("DOMContentLoaded", () => {
             renderClassifications();
             classMenu.classList.remove("hidden");
             classIcon.src = "http://www.alunos.dcc.fc.up.pt/~up202207213/img/classificacoes_logo_2.png";
+            ensurePanelVisible(classMenu);  
         } else {
             classMenu.classList.add("hidden");
             classIcon.src = "http://www.alunos.dcc.fc.up.pt/~up202207213/img/classificacoes_logo.png";
@@ -84,6 +105,7 @@ document.addEventListener("DOMContentLoaded", () => {
             closeAllMenus();
             regrasMenu.classList.remove("hidden");
             regrasIcon.src = "http://www.alunos.dcc.fc.up.pt/~up202207213/img/regras_logo_2.png";
+            ensurePanelVisible(regrasMenu);  
         } else {
             regrasMenu.classList.add("hidden");
             regrasIcon.src = "http://www.alunos.dcc.fc.up.pt/~up202207213/img/regras_logo.png";
@@ -123,6 +145,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (voltarButton) {
         voltarButton.addEventListener("click", () => {
             restartToModeSelection();
+            closeAllMenus();
         });
     }
 
