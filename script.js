@@ -18,12 +18,21 @@ document.addEventListener("DOMContentLoaded", () => {
     const voltarButton = document.getElementById("voltarButton");
     const desistirButton = document.getElementById("desistirButton");
     const clearBtn = document.getElementById("clearButton");
-
+    const loginForm = document.getElementById("loginForm");
+    const usernameInput = document.getElementById("username");
+    const passwordInput = document.getElementById("password");
+    const buttonEntrar = document.getElementById("buttonEntrar");
+    const loggedMenu = document.getElementById("loggedMenu");
+    const loggedUsername = document.getElementById("loggedUsername");
+    const logoutButton = document.getElementById("logoutButton");
+    const sizeSelect = document.getElementById("sizeSelect");
+    
 
     const settingsIcon = settingsButton.querySelector("img");
     const loginIcon = userButton.querySelector("img");
     const regrasIcon = regrasButton.querySelector("img");
     const classIcon = classButton.querySelector("img");
+
 
     // Abre a "caixa" inicial que contêm o jogo
     closedBox.addEventListener("click", () => {
@@ -34,7 +43,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Estado inicial para todos os menus 
     const closeAllMenus = () => {
-        [loginMenu, settingsMenu, regrasMenu, classMenu].forEach(menu => menu.classList.add("hidden"));
+        [loginMenu, loggedMenu, settingsMenu, regrasMenu, classMenu].forEach(menu => menu.classList.add("hidden"));
         loginIcon.src = "http://www.alunos.dcc.fc.up.pt/~up202207213/img/user_logo.png";
         settingsIcon.src = "http://www.alunos.dcc.fc.up.pt/~up202207213/img/settings_logo.png";
         regrasIcon.src = "http://www.alunos.dcc.fc.up.pt/~up202207213/img/regras_logo.png";
@@ -62,16 +71,81 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     // Menu Login
+    let isLoggedIn = false;
+
     userButton.addEventListener("click", () => {
-        if (loginMenu.classList.contains("hidden")) {
-            closeAllMenus();
-            loginMenu.classList.remove("hidden");
-            loginIcon.src = "http://www.alunos.dcc.fc.up.pt/~up202207213/img/user_logo_2.png";
+        if (!isLoggedIn) {
+            if (loginMenu.classList.contains("hidden")) {
+                closeAllMenus();
+                loginMenu.classList.remove("hidden");
+                loginIcon.src = "http://www.alunos.dcc.fc.up.pt/~up202207213/img/user_logo_2.png";
+            } else {
+                loginMenu.classList.add("hidden");
+                loginIcon.src = "http://www.alunos.dcc.fc.up.pt/~up202207213/img/user_logo.png";
+            }
         } else {
-            loginMenu.classList.add("hidden");
-            loginIcon.src = "http://www.alunos.dcc.fc.up.pt/~up202207213/img/user_logo.png";
+            if (loggedMenu.classList.contains("hidden")) {
+                closeAllMenus();
+                loggedMenu.classList.remove("hidden");
+                loginIcon.src = "http://www.alunos.dcc.fc.up.pt/~up202207213/img/user_logo_2.png";
+            } else {
+                loggedMenu.classList.add("hidden");
+                loginIcon.src = "http://www.alunos.dcc.fc.up.pt/~up202207213/img/user_logo.png";
+            }
         }
     });
+
+
+
+    function updateLoginButtonState() {
+        const hasNick = usernameInput.value.trim() !== "";
+        const hasPass = passwordInput.value.trim() !== "";
+    }
+
+    usernameInput.addEventListener("input", updateLoginButtonState);
+    passwordInput.addEventListener("input", updateLoginButtonState);~
+
+    loginForm.addEventListener("submit", async (ev) => {
+        ev.preventDefault();
+
+        const usernameInput = document.getElementById("username");
+        const passwordInput = document.getElementById("password");
+
+        const nick = usernameInput.value;  
+        const pass = passwordInput.value; 
+
+        try {
+            await registerUser(nick, pass);
+
+            isLoggedIn = true;
+            loggedUsername.textContent = nick;
+
+            loginMenu.classList.add("hidden");
+            loggedMenu.classList.add("hidden");
+            loginIcon.src = "http://www.alunos.dcc.fc.up.pt/~up202207213/img/user_logo.png";
+
+            passwordInput.value = "";
+        } catch (err) {
+            let msg = err.message;
+            if (msg.includes("User registered with a different password")) {
+                msg = "A password está incorreta.";
+            }
+            alert(msg);
+        }
+    });
+
+
+    logoutButton.addEventListener("click", () => {
+        isLoggedIn = false;
+        loggedUsername.textContent = "Username";
+        restartToModeSelection();
+        closeAllMenus();
+
+        if (typeof stopUpdateListener === "function") {
+            stopUpdateListener();
+        }
+    });
+
 
     // Menu Confiurações
     settingsButton.addEventListener("click", () => {
@@ -150,7 +224,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Jogador vs Jogador
-    jogador.addEventListener("click", () => {
+    // No ficheiro script.js
+    function iniciarJogoUI_vsJogador() {
         jogador.classList.add("hidden");
         ia.classList.add("hidden");
         jogadorText.classList.remove("hidden");
@@ -164,11 +239,51 @@ document.addEventListener("DOMContentLoaded", () => {
         toggleMsgPanel(true);
 
         announceAwaitRoll(GameState.currentPlayer);
-        renderBoard();
+        
+        // CORREÇÃO: Apenas renderizar se for jogo local ou se a cor já estiver definida
+        // NUNCA remova o if/bloco inteiro, pois o jogo local ainda precisa de renderizar
+        if (!OnlineState.game || GameState.myColor) {
+            renderBoard(); 
+        }
+
         updateRollUI();
         updateDesistirUI();
+        closeAllMenus();
+    }
+
+    jogador.addEventListener("click", async () => {
+        console.log("[UI] Click no botão Jogador vs Jogador");
+        closeAllMenus();
+
+        if (!isLoggedIn) {
+            loginMenu.classList.remove("hidden");
+            loginIcon.src = "http://www.alunos.dcc.fc.up.pt/~up202207213/img/user_logo_2.png";
+
+            alert("Tem de iniciar sessão para jogar online.");
+            return;
+        }
+
+        const size = parseInt(sizeSelect.value, 10);
+        console.log("[UI] Tamanho escolhido =", size);
+
+        GameState.myColor = null;
+        GameState.opponentColor = null;
+        GameState.isMyTurn = false;
+        
+        try {
+            const gameId = await joinGame(size);
+            console.log("[UI] join feito com sucesso, game =", gameId);
+        
+            iniciarJogoUI_vsJogador();  
+            startUpdateListener();
+
+        } catch (err) {
+            alert("Erro ao entrar em jogo online: " + err.message);
+            console.error(err);
+        }
 
     });
+
 
     // Jogador vs IA
     ia.addEventListener("click", () => {
@@ -190,6 +305,8 @@ document.addEventListener("DOMContentLoaded", () => {
         renderBoard();
         updateRollUI();
         updateDesistirUI();
+        closeAllMenus();
+
 
         if (GameState.currentPlayer === GameState.aiColorLabel) {
             setMsg("A IA vai lançar os dados...");
@@ -200,32 +317,52 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // Botão Desistir - atribui vencedor, guarda classificação e recomeça
-    if (desistirButton) {
-        desistirButton.addEventListener("click", () => {
-            if (!GameState.inGame) return;
-            if (!isHumanTurnNow()) return;
+    desistirButton.addEventListener("click", async () => {
+        if (!GameState.inGame) return;
 
-            const winnerColor = GameState.vsAI
-                ? GameState.aiColorLabel
-                : (GameState.currentPlayer === "Azul" ? "Vermelho" : "Azul");
-            const winnerDisplay = winnerLabelForDisplay(winnerColor);
+        // LOCAL: impedir desistir quando não é a vez do jogador humano
+        if (!OnlineState.game && !isHumanTurnNow()) {
+            return;
+        }
 
+        const confirma = confirm("Tens a certeza que queres desistir do jogo?");
+        if (!confirma) return;
+
+        // Se estiver num jogo ONLINE → chamar /leave
+        if (OnlineState.game) {
+            console.log("[UI] desistir num jogo ONLINE, chamando leaveGame()");
             try {
-                const nivel = GameState.vsAI ? (GameState.aiDifficulty || "Fácil") : "PvP";
-                saveClassification(nivel, winnerDisplay);
-                if (!classMenu.classList.contains("hidden")) renderClassifications();
-            } catch (_) { }
+                await leaveGame();   // <-- DEFINIDO EM server.js
+            } catch (err) {
+                console.error("[UI] erro ao fazer leave:", err);
+                alert("Erro ao comunicar com o servidor.");
+            }
+        }
 
-            const DESISTIR_DELAY = 1200;
-            setMsgTemp(`Jogador desistiu do jogo.\n${winnerDisplay} ganhou.`, DESISTIR_DELAY);
+        // A PARTIR DAQUI → lógica igual ao teu código ORIGINAL (PvP local, vs AI, e também online)
+        closeAllMenus();
 
-            setTimeout(() => {
-                restartToModeSelection();
-                desistirButton.classList.add("hidden");
-                updateDesistirUI();
-            }, DESISTIR_DELAY);
-        });
-    }
+        const winnerColor = GameState.vsAI
+            ? GameState.aiColorLabel
+            : (GameState.currentPlayer === "Azul" ? "Vermelho" : "Azul");
+
+        const winnerDisplay = winnerLabelForDisplay(winnerColor);
+
+        try {
+            const nivel = GameState.vsAI ? (GameState.aiDifficulty || "Fácil") : "PvP";
+            saveClassification(nivel, winnerDisplay);
+            if (!classMenu.classList.contains("hidden")) renderClassifications();
+        } catch (_) { }
+
+        const DESISTIR_DELAY = 1200;
+        setMsgTemp(`Jogador desistiu do jogo.\n${winnerDisplay} ganhou.`, DESISTIR_DELAY);
+
+        setTimeout(() => {
+            restartToModeSelection();
+            desistirButton.classList.add("hidden");
+            updateDesistirUI();
+        }, DESISTIR_DELAY);
+    });
 
 
     // Animação Dados
@@ -244,6 +381,16 @@ document.addEventListener("DOMContentLoaded", () => {
             d.classList.add("down");
         });
     }
+
+    function setDiceVisualFromStickValues(stickValues) {
+        const diceEls = Array.from(document.querySelectorAll(".dado"));
+        diceEls.forEach((el, i) => {
+            const up = !!(stickValues && stickValues[i]);
+            el.classList.toggle("up", up);
+            el.classList.toggle("down", !up);
+        });
+    }
+
 
     // Mensagens 
     let statusEl = document.querySelector(".statusMsg");
@@ -318,8 +465,106 @@ document.addEventListener("DOMContentLoaded", () => {
         inGame: false,
         aiTimer: null,
         isRolling: false,
-        stats: { startTime: null, moves: 0 }
+        stats: { startTime: null, moves: 0 },
+
+        myColor: null,          // "Azul" ou "Vermelho" em jogo online
+        opponentColor: null,    // cor do adversário
+        isMyTurn: false         // true: é a minha vez; false: é do adversário
     };
+
+    // noutro ficheiro ou antes de usar:
+    const OnlineState = {
+        nick: null,
+        password: null,
+        game: null
+        // podes adicionar mais coisas se quiseres (role, etc.)
+    };
+
+    function mapServerColor(c) {
+        if (c === "Blue") return "Azul";
+        if (c === "Red")  return "Vermelho";
+        return c; // fallback, caso o servidor mude algo no futuro
+    }
+
+
+    function normalizePlayers(players, myNick, turnNick) {
+        let myColorServer = null;
+        let oppColorServer = null;
+        let turnColorServer = null;
+
+        if (!players) {
+            return { myColorServer, oppColorServer, turnColorServer };
+        }
+
+        // --- Forma A: { nick: "Blue"/"Red" } ou { nick: 1/2 } ---
+        if (players[myNick] != null) {
+            myColorServer = players[myNick];
+        }
+        if (turnNick && players[turnNick] != null) {
+            turnColorServer = players[turnNick];
+        }
+
+        // --- Forma B: { Blue: nick1, Red: nick2 } ou { 1: nick1, 2: nick2 } ---
+        if (!myColorServer || !turnColorServer) {
+            const blueNick = players.Blue ?? players["1"];
+            const redNick  = players.Red  ?? players["2"];
+
+            if (!myColorServer) {
+                if (blueNick === myNick) myColorServer = "Blue";
+                else if (redNick === myNick) myColorServer = "Red";
+            }
+
+            if (turnNick && !turnColorServer) {
+                if (blueNick === turnNick) turnColorServer = "Blue";
+                else if (redNick === turnNick) turnColorServer = "Red";
+            }
+        }
+
+        if (myColorServer) {
+            oppColorServer = (myColorServer === "Blue" || myColorServer === 1 || myColorServer === "1")
+                ? "Red"
+                : "Blue";
+        }
+
+        return { myColorServer, oppColorServer, turnColorServer };
+    }
+
+
+    function applyOnlineTurnInfoFromState(state) {
+        if (!OnlineState.game || !state.players) return;
+
+        const myNick   = OnlineState.nick;
+        const turnNick = state.turn || null;   // pode estar ausente
+
+        // Atualizar isMyTurn **só** se houver turnNick
+        if (turnNick) {
+            GameState.isMyTurn = (turnNick === myNick);
+        }
+
+        const { myColorServer, oppColorServer, turnColorServer } =
+            normalizePlayers(state.players, myNick, turnNick);
+
+        // === MINHA COR ===
+        if (myColorServer != null) {
+            const myColor = mapServerColor(myColorServer);
+            if (myColor) {
+                GameState.myColor = myColor;   // "Azul" ou "Vermelho"
+                GameState.opponentColor = oppColorServer
+                    ? mapServerColor(oppColorServer)
+                    : (myColor === "Azul" ? "Vermelho" : "Azul");
+            }
+        }
+
+        // === COR DO JOGADOR DE TURNO ===
+        if (turnColorServer != null) {
+            const turnColor = mapServerColor(turnColorServer);
+            if (turnColor) {
+                GameState.currentPlayer = turnColor;
+            }
+        }
+    }
+
+
 
     // Definição do Vencedor conforme a cor
     function winnerLabelForDisplay(winnerColor) {
@@ -405,6 +650,10 @@ document.addEventListener("DOMContentLoaded", () => {
         GameState.stats.startTime = null;
         GameState.stats.moves = 0;
 
+        // 👇 LIMPAR ESTADO ONLINE
+        GameState.myColor = null;
+        GameState.opponentColor = null;
+        GameState.isMyTurn = false;
 
         resetDiceVisual();
         initBoardState(GameState.cols);
@@ -412,6 +661,7 @@ document.addEventListener("DOMContentLoaded", () => {
         clearHighlights();
         updateRollUI();
     }
+
 
     // Menu Configurações 
     // Nível IA
@@ -446,21 +696,34 @@ document.addEventListener("DOMContentLoaded", () => {
     // Delays da IA
     const AI_DELAY = { ROLL: 1800, PICK: 3500, BRANCH: 2200, CHAIN: 1800 };
 
-    function toView(r, c, player) {
-        if (player === "Azul") return { vr: r, vc: c };
-        return { vr: GameState.rows - 1 - r, vc: GameState.cols - 1 - c };
-    }
-
-    function getPerspectivePlayer() {
-        return "Azul";
-    }
-
     function fromView(vr, vc, player) {
         if (player === "Azul") return { r: vr, c: vc };
         return { r: GameState.rows - 1 - vr, c: GameState.cols - 1 - vc };
     }
 
-    // Atualiza o botão de Dados
+    function toView(r, c, player) {
+        if (player === "Azul") return { vr: r, vc: c };
+        return { vr: GameState.rows - 1 - r, vc: GameState.cols - 1 - c };
+    }
+
+
+    function getPerspectivePlayer() {
+        if (OnlineState && OnlineState.game && GameState.myColor) {
+            return GameState.myColor;
+        }
+        return "Azul";   // fallback quando não temos cor
+    }
+
+
+    // Converte um índice "cell" vindo do servidor para (r,c)
+    function cellIndexToRC(cell) {
+        const cols = GameState.cols;
+        const r = Math.floor(cell / cols);
+        const c = cell % cols;
+        return { r, c };
+    }
+
+
     function updateRollUI() {
         const btn = document.getElementById("baralharDados");
 
@@ -468,6 +731,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (!btn) return;
 
+        // Se o jogo acabou, mostramos "Jogar de novo"
         if (GameState.mode === "finished") {
             btn.style.display = "";
             btn.disabled = false;
@@ -475,6 +739,7 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
+        // Em jogo vs IA, esconder o botão quando é a vez da IA
         const aiTurn = GameState.vsAI && GameState.currentPlayer === GameState.aiColorLabel;
 
         if (aiTurn) {
@@ -482,15 +747,36 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        if (GameState.mustPass) {
-            btn.style.display = "";
-            btn.disabled = false;
-            btn.textContent = (GameState.nextPlayer === GameState.currentPlayer)
-                ? "Lançar Dados"
-                : "Passar a vez";
+        const isOnline = !!OnlineState.game;
+
+        // 🔴 NOVO: em jogo online, se NÃO é a minha vez, escondemos SEMPRE o botão
+        if (isOnline && GameState.isMyTurn === false) {
+            btn.style.display = "none";
             return;
         }
 
+        // Situação em que o servidor/estado diz que tenho de passar
+        if (GameState.mustPass) {
+            btn.style.display = "";
+
+            if (isOnline) {
+                // Aqui já sabemos que é a minha vez (o caso "não é a minha vez"
+                // foi tratado no if logo acima)
+                btn.disabled = false;
+                btn.textContent = GameState.dice?.canRepeat
+                    ? "Lançar Dados"
+                    : "Passar a vez";
+            } else {
+                // LOCAL: lógica antiga de passar a vez
+                btn.disabled = false;
+                btn.textContent = (GameState.nextPlayer === GameState.currentPlayer)
+                    ? "Lançar Dados"
+                    : "Passar a vez";
+            }
+            return;
+        }
+
+        // Situação normal em que estou à espera para lançar dados
         if (GameState.mode === "awaitRoll") {
             btn.style.display = "";
             btn.disabled = false;
@@ -498,8 +784,22 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
+        // Caso contrário, botão escondido
         btn.style.display = "none";
     }
+
+    function mapServerColor(c) {
+        // Servidor pode mandar "Blue"/"Red", ou 1/2, ou "1"/"2"
+        if (c === "Blue" || c === 1 || c === "1") return "Azul";
+        if (c === "Red"  || c === 2 || c === "2") return "Vermelho";
+
+        // No pior caso, se for "Azul"/"Vermelho" já normalizado, devolve tal e qual
+        if (c === "Azul" || c === "Vermelho") return c;
+
+        console.warn("[mapServerColor] cor desconhecida do servidor:", c);
+        return null;
+    }
+
 
     // Atualiza botão de desistir
     function updateDesistirUI() {
@@ -602,7 +902,6 @@ document.addEventListener("DOMContentLoaded", () => {
         updateRollUI();
     }
 
-    const sizeSelect = document.getElementById("sizeSelect");
     if (sizeSelect && boardEl) {
         resetAndRender(parseInt(sizeSelect.value, 10));
         sizeSelect.addEventListener("change", e => {
@@ -620,15 +919,103 @@ document.addEventListener("DOMContentLoaded", () => {
         return { sum: claros, value, canRepeat };
     }
     // botão
+
+    function applyRollResult(d) {
+        GameState.dice = d;
+        GameState.mode = "awaitPiece";
+        GameState.selected = null;
+
+        let msg = `Saiu ${d.value}.\n`;
+
+        msg += (GameState.vsAI && GameState.currentPlayer === GameState.aiColorLabel)
+            ? "A IA vai escolher uma peça para jogar."
+            : "Escolha uma peça para jogar.";
+
+        if (d.canRepeat) msg += `\nComo saiu ${d.value} pode voltar a lançar os dados.\n`;
+
+        setMsg(msg);
+        clearHighlights();
+        updateRollUI();
+        if (!isAITurnNow()) {
+            highlightMoveablePieces();
+        }
+
+        GameState.isRolling = false;
+        scheduleAI(AI_DELAY.PICK);
+    }
+
     const btnDados = document.getElementById("baralharDados");
+
     if (btnDados) {
         btnDados.addEventListener("click", () => {
+            closeAllMenus();
             if (GameState.mode === "finished") {
                 restartToModeSelection();
                 return;
             }
             if (GameState.isRolling) return;
 
+            // === MODO ONLINE: o lançamento é feito no servidor ===
+            if (OnlineState.game) {
+
+                // se o servidor diz que NÃO é a minha vez, não deixamos lançar
+                if (GameState.isMyTurn === false) {
+                    setMsg("É a vez do adversário.");
+                    return;
+                }
+
+                // só deixamos mexer no botão se o estado for o esperado
+                if (GameState.mode !== "awaitRoll") return;
+
+                const btn = document.getElementById("baralharDados");
+
+                // se o servidor disse que EU tenho de passar e NÃO posso relançar,
+                // então em vez de /roll fazemos /pass
+                if (GameState.mustPass && !GameState.dice?.canRepeat) {
+                    if (btn) btn.disabled = true;
+
+                    setMsg(
+                        "Não tens jogadas válidas nem podes lançar de novo.\n" +
+                        "A passar a vez..."
+                    );
+
+                    passGame()
+                        .then(() => {
+                            console.log("[UI] /pass enviado com sucesso; à espera do /update...");
+                            // O novo turno virá pelo /update
+                        })
+                        .catch(err => {
+                            console.error("[UI] erro ao passar a vez online:", err);
+                            alert(err.message || "Erro ao passar a vez online.");
+                            if (btn) btn.disabled = false;
+                        });
+
+                    return;
+                }
+
+                // caso normal: posso lançar dados
+                GameState.isRolling = true;
+                if (btn) btn.disabled = true;
+
+                setMsg("A lançar dados online...");
+
+                rollGame()
+                    .then(() => {
+                        console.log("[UI] /roll enviado com sucesso; à espera do /update...");
+                    })
+                    .catch(err => {
+                        console.error("[UI] erro ao lançar dados online:", err);
+                        alert(err.message || "Erro ao lançar dados online.");
+                        GameState.isRolling = false;
+                        if (btn) btn.disabled = false;
+                    });
+
+                return; // NÃO faz o lançamento local
+            }
+
+
+
+            // === MODO LOCAL (PvP no mesmo PC ou vs IA) – o teu código antigo ===
             if (GameState.mode === "awaitRoll" && GameState.mustPass) {
                 GameState.mustPass = false;
                 GameState.currentPlayer = GameState.nextPlayer || GameState.currentPlayer;
@@ -649,27 +1036,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             setTimeout(() => {
                 const d = lerLancamentoPaus();
-                GameState.dice = d;
-                GameState.mode = "awaitPiece";
-                GameState.selected = null;
-
-                let msg = `Saiu ${d.value}.\n`;
-
-                msg += (GameState.vsAI && GameState.currentPlayer === GameState.aiColorLabel)
-                    ? "A IA vai escolher uma peça para jogar."
-                    : "Escolha uma peça para jogar.";
-
-                if (d.canRepeat) msg += `\nComo saiu ${d.value} pode voltar a lançar os dados.\n`;
-
-                setMsg(msg);
-                clearHighlights();
-                updateRollUI();
-                if (!isAITurnNow()) {
-                    highlightMoveablePieces();
-                }
-
-                GameState.isRolling = false;
-                scheduleAI(AI_DELAY.PICK);
+                applyRollResult(d);
             }, SPINS * STEP + 10);
         });
     }
@@ -682,10 +1049,16 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function isOwnPiece(r, c) {
-        const me = meOwner(GameState.currentPlayer);
+        // Se estiver em jogo ONLINE, "eu" sou sempre a minha cor fixa
+        const label = (OnlineState && OnlineState.game)
+            ? GameState.myColor          // "Azul" ou "Vermelho" definidos no handleServerUpdate
+            : GameState.currentPlayer;   // modo local: jogador da vez
+
+        const me = meOwner(label);       // "A" ou "V"
         const v = GameState.board[r][c];
         return v && v.owner === me;
     }
+
 
     function canLand(r, c) {
         const me = meOwner(GameState.currentPlayer);
@@ -782,6 +1155,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const colLabel = isLR ? (vc + 1) : (GameState.cols - vc);
         return { row: rowNum, col: colLabel };
     }
+
 
     function applyMove(from, to) {
         const me = meOwner(GameState.currentPlayer);
@@ -1141,20 +1515,50 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Clicks no tabuleiro
     // controla a seleção da peça pelo utilizador; escolhe a bifurcação e o destino final 
-    function onCellClick(e) {
+    async function onCellClick(e) {
         const vr = parseInt(e.currentTarget.dataset.vr, 10);
         const vc = parseInt(e.currentTarget.dataset.vc, 10);
         const persp = getPerspectivePlayer();
         const { r, c } = fromView(vr, vc, persp);
 
-        if (isAITurnNow()) return;
+        const cell = r * GameState.cols + c;
 
+        if (isAITurnNow()) return;
         if (GameState.mode === "finished") return;
 
         if (GameState.mode === "awaitRoll") {
             setMsg("Primeiro lança os dados.");
             return;
         }
+
+        // === MODO ONLINE ===
+        if (OnlineState && OnlineState.game) {
+
+            if (!GameState.isMyTurn) {
+                setMsg("É a vez do adversário.");
+                return;
+            }
+
+            if (!isOwnPiece(r, c)) {
+                setMsg("Escolhe uma das tuas peças.");
+                return;
+            }
+
+            try {
+                await notifyMove(cell);
+                console.log("[UI] notify enviado com cell =", cell);
+            } catch (err) {
+                console.error("[UI] erro ao notificar jogada online:", err);
+                setMsg(err.message || "Erro ao notificar jogada online.");
+            }
+
+            return; // não cai na lógica local
+        }
+
+
+        // =========================
+        //      MODO LOCAL
+        // =========================
 
         function fixBranchOptionsForOwner(ownerChar, options) {
             if (ownerChar === "A") return options;
@@ -1213,7 +1617,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 setMsg("Estás na 3.ª linha: escolhe o destino (4.ª ou 2.ª).");
                 return;
             }
-
 
             if (dest.r == null || !canLand(dest.r, dest.c)) {
                 setMsg("Jogada inválida.");
@@ -1277,4 +1680,145 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
     }
+
+
+    function handleServerUpdate(state) {
+        if (!state || state.error) {
+            console.error("[UI] erro de estado do servidor:", state && state.error);
+            return;
+        }
+
+        // 1) Info de turno / cores (ONLINE)
+        if (OnlineState.game && state.players) {
+            // Guarda o valor de GameState.myColor antes de a atualização
+            const previousColor = GameState.myColor; 
+
+            applyOnlineTurnInfoFromState(state); // Esta função define GameState.myColor
+
+            // CORREÇÃO: Verifica se a cor foi definida PELA PRIMEIRA VEZ (previousColor === null)
+            // Se a cor mudou de null para 'Vermelho' (ou 'Azul'), precisamos de re-renderizar
+            if (GameState.myColor && !previousColor) {
+                console.log("[UI] Cor recebida pela 1ª vez. Re-renderizar tabuleiro...");
+                renderBoard(); 
+                // NOTA: É importante que renderBoard() utilize GameState.myColor
+                // (através de getPerspectivePlayer()) para aplicar a perspetiva correta.
+            }
+
+            console.log("[DEBUG] players =", state.players);
+            console.log("[DEBUG] myNick =", OnlineState.nick);
+            console.log("[DEBUG] myColor =", GameState.myColor);
+            console.log("[DEBUG] isMyTurn =", GameState.isMyTurn);
+        }
+        
+        // 2) Jogo terminado?
+        if ("winner" in state) {   // existe mesmo que seja null
+            if (state.winner === null) {
+                console.log("[UI] jogo terminado sem vencedor (desistência antes de começar).");
+                setMsg("O jogo online foi cancelado (sem vencedor).");
+            } else {
+                const winnerNick = state.winner;
+                const winnerColorServer = state.players?.[winnerNick]; // "Blue" ou "Red"
+                const winnerColor = mapServerColor(winnerColorServer);
+                const winnerDisplay = winnerLabelForDisplay(winnerColor);
+                setMsg(`Fim do jogo online!\n${winnerDisplay} ganhou!`);
+            }
+
+            stopUpdateListener();   // função do server.js
+            OnlineState.game = null;
+            GameState.inGame = false;
+            GameState.mode = "menu";
+            clearHighlights && clearHighlights();
+            return;
+        }
+
+        // 3) Atualizar tabuleiro
+        if (Array.isArray(state.pieces) &&
+            state.pieces.length === GameState.rows * GameState.cols &&
+            typeof state.pieces[0] === "number") {
+
+            const rows = GameState.rows;
+            const cols = GameState.cols;
+            const newBoard = Array.from({ length: rows }, () =>
+                Array.from({ length: cols }, () => null)
+            );
+
+            state.pieces.forEach((v, idx) => {
+                if (!v) return; // 0 = vazio
+
+                const { r, c } = cellIndexToRC(idx);
+
+                let ownerChar;
+                if (v === 1) ownerChar = "A";      // jogador 1 (normalmente Azul)
+                else if (v === 2) ownerChar = "V"; // jogador 2 (normalmente Vermelho)
+                else return;
+
+                if (r >= 0 && r < rows && c >= 0 && c < cols) {
+                    newBoard[r][c] = { owner: ownerChar, stage: STAGE.MOVED_NOT_LAST };
+                }
+            });
+
+            GameState.board = newBoard;
+            
+            // Mantemos esta chamada para atualizar o estado das peças
+            // MAS a correção anterior trata da perspetiva inicial
+            renderBoard(); 
+        } else if (Array.isArray(state.pieces)) {
+            console.log("[update] formato de pieces desconhecido, a ignorar por agora:", state.pieces);
+        }
+
+        // 4) Atualizar dados / mustPass (reusa a tua lógica atual)
+        if (state.dice) {
+            const diceState = state.dice;
+            console.log("[UI] update de dados:", diceState, "mustPass:", state.mustPass);
+
+            const myNick = OnlineState.nick;
+            const myTurn = (GameState.isMyTurn === true);
+            const iMustPass = (state.mustPass === myNick);
+
+            if (diceState.stickValues) {
+                setDiceVisualFromStickValues(diceState.stickValues);
+            }
+
+            const d = {
+                sum: null,
+                value: diceState.value,
+                canRepeat: !!diceState.keepPlaying
+            };
+            GameState.dice = d;
+            GameState.isRolling = false;
+
+            // --- Caso A: NÃO é a minha vez (foi o adversário que lançou) ---
+            if (!myTurn) {
+                GameState.mustPass = false;
+                GameState.mode = "awaitRoll";
+                setMsg(`O adversário lançou os dados (saiu ${d.value}).`);
+                updateRollUI();
+                return;
+            }
+
+            // --- Caso B: é a minha vez, tenho de passar e não posso relançar ---
+            if (iMustPass && !d.canRepeat) {
+                GameState.mustPass = true;
+                GameState.mode = "awaitRoll";
+
+                setMsg(
+                    `Saiu ${d.value}.\n` +
+                    `Não tens jogadas válidas.\n` +
+                    `A vez passa para o adversário. Aguarda que ele lance os dados.`
+                );
+
+                updateRollUI();
+                return;
+            }
+
+            // --- Caso C: é a minha vez e posso jogar normalmente ---
+            GameState.mustPass = false;
+            applyRollResult(d);   // já usavas isto em local, continua igual
+            return;
+        }
+    }
+
+    
+    window.handleServerUpdate = handleServerUpdate;
+
 });
