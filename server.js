@@ -1,11 +1,12 @@
 const SERVER_URL = "http://twserver.alunos.dcc.fc.up.pt:8008";
 const GROUP_ID = 9;
 
-const OnlineState = {
+// Usa SEMPRE o mesmo OnlineState que vem do server.js
+const OnlineState = window.OnlineState || (window.OnlineState = {
     nick: null,
     password: null,
     game: null
-};
+});
 
 window.OnlineState = OnlineState;
 
@@ -288,8 +289,6 @@ async function leaveGame() {
         game: OnlineState.game
     };
 
-    console.log("[leave] a enviar pedido:", body);
-
     let result;
     try {
         result = await postJSON("leave", body);
@@ -303,12 +302,15 @@ async function leaveGame() {
         throw new Error(result.error);
     }
 
-    console.log("[leave] OK, jogador saiu do jogo", OnlineState.game);
-
-    stopUpdateListener();
-    OnlineState.game = null;
+    // ⚠️ IMPORTANTE:
+    // NÃO fechar aqui o EventSource nem limpar OnlineState.game.
+    // O servidor ainda vai mandar um /update com "winner"
+    // (null se cancelado antes de começar, ou nick do vencedor).
+    // Quem trata disso é o handleServerUpdate no script.js.
 
     return result;
 }
+
+
 
 window.leaveGame = leaveGame;
