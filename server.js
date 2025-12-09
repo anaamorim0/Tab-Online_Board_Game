@@ -64,7 +64,6 @@ async function registerUser(nickArg, passArg) {
     OnlineState.nick = cleanNick;
     OnlineState.password = cleanPass;
 
-    console.log("[register] OK para nick =", cleanNick);
     return result;
 }
 
@@ -101,7 +100,6 @@ async function joinGame(size) {
 
     OnlineState.game = String(result.game);
 
-    console.log("[join] OK, game =", result.game, "size =", boardSize);
     return result.game;
 }
 
@@ -123,14 +121,12 @@ function startUpdateListener() {
     });
 
     const url = `${SERVER_URL}/update?${params.toString()}`;
-    console.log("[update] a ligar a", url);
 
     updateSource = new EventSource(url);
 
     updateSource.onmessage = (event) => {
         try {
             const data = JSON.parse(event.data);
-            console.log("[update] mensagem recebida:", data);
 
             // <- chama a função no script.js
             handleServerUpdate(data);
@@ -147,7 +143,6 @@ function startUpdateListener() {
 
 function stopUpdateListener() {
     if (updateSource) {
-        console.log("[update] a fechar EventSource");
         updateSource.close();
         updateSource = null;
     }
@@ -169,7 +164,6 @@ async function rollGame() {
 
     const body = { nick, password, game };
 
-    console.log("[roll] a enviar pedido:", body);
 
     let result;
     try {
@@ -185,8 +179,6 @@ async function rollGame() {
         throw new Error(result.error);
     }
 
-    // Normalmente é {} – o resultado real vem depois pelo /update
-    console.log("[roll] pedido de lançamento aceite:", result);
     return result;
 }
 
@@ -207,7 +199,6 @@ async function passGame() {
 
     const body = { nick, password, game };
 
-    console.log("[pass] a enviar pedido:", body);
 
     let result;
     try {
@@ -223,7 +214,6 @@ async function passGame() {
     }
 
     // Normalmente é {} – o novo estado (novo turno) vem depois no /update
-    console.log("[pass] vez passada com sucesso:", result);
     return result;
 }
 
@@ -250,7 +240,6 @@ async function notifyMove(cell) {
         cell: cell
     };
 
-    console.log("[notify] a enviar jogada:", body);
 
     let result;
     try {
@@ -265,7 +254,6 @@ async function notifyMove(cell) {
         throw new Error(result.error);
     }
 
-    console.log("[notify] jogada aceite:", result); // normalmente {}
     return result;
 }
 
@@ -302,11 +290,6 @@ async function leaveGame() {
         throw new Error(result.error);
     }
 
-    // ⚠️ IMPORTANTE:
-    // NÃO fechar aqui o EventSource nem limpar OnlineState.game.
-    // O servidor ainda vai mandar um /update com "winner"
-    // (null se cancelado antes de começar, ou nick do vencedor).
-    // Quem trata disso é o handleServerUpdate no script.js.
 
     return result;
 }
