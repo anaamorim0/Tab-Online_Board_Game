@@ -531,17 +531,30 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!OnlineState.game || !state.players) return;
 
         const myNick = OnlineState.nick;
-        const turnNick = state.turn || (state.dice && state.dice.turn) || null;
+        
+        // Tenta encontrar o turno em qualquer lado possível
+        let turnNick = state.turn || (state.dice && state.dice.turn) || null;
 
-        // 1. Tenta definir isMyTurn pelo Nickname (Comparação segura)
-        if (turnNick && myNick) {
-            GameState.isMyTurn = (turnNick.trim().toLowerCase() === myNick.trim().toLowerCase());
+        // SE O SERVIDOR NÃO MANDOU TURNO (ex: num notify intermédio),
+        // mantemos o isMyTurn como estava, em vez de definir como false!
+        if (turnNick) {
+             if (myNick) {
+                 GameState.isMyTurn = (turnNick.trim().toLowerCase() === myNick.trim().toLowerCase());
+             }
+        } else {
+            // Se turnNick é null, NÃO alteramos o GameState.isMyTurn.
+            // Mantemos o estado anterior.
+        }
+        
+        // Se ainda não temos turnNick para normalizar cores, tentamos usar o último conhecido
+        if (!turnNick && GameState.lastTurnNick) {
+            turnNick = GameState.lastTurnNick;
         }
 
         const { myColorServer, oppColorServer, turnColorServer } =
             normalizePlayers(state.players, myNick, turnNick);
 
-        // 2. Definir as Cores
+        // ... (resto da função de cores mantém-se igual)
         if (myColorServer != null) {
             const myColor = mapServerColor(myColorServer);
             if (myColor) {
@@ -551,15 +564,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     : (myColor === "Azul" ? "Vermelho" : "Azul");
             }
         }
-
         if (turnColorServer != null) {
             const turnColor = mapServerColor(turnColorServer);
             if (turnColor) {
                 GameState.currentPlayer = turnColor;
-                
-                // 🟢 REDE DE SEGURANÇA:
-                // Se a comparação de Nomes falhou (ex: espaços, encoding),
-                // mas as Cores coincidem, então É A MINHA VEZ.
+                // Rede de segurança extra baseada na cor
                 if (GameState.myColor && GameState.currentPlayer === GameState.myColor) {
                     GameState.isMyTurn = true;
                 }
