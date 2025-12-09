@@ -531,19 +531,17 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!OnlineState.game || !state.players) return;
 
         const myNick = OnlineState.nick;
-        
-        // 🟢 CORREÇÃO: Ler o turno de onde ele realmente vem (visto na imagem.png)
         const turnNick = state.turn || (state.dice && state.dice.turn) || null;
 
+        // 1. Tenta definir isMyTurn pelo Nickname (Comparação segura)
         if (turnNick && myNick) {
-            // 🟢 CORREÇÃO: Comparação segura
-            GameState.isMyTurn = (turnNick.toLowerCase() === myNick.toLowerCase());
+            GameState.isMyTurn = (turnNick.trim().toLowerCase() === myNick.trim().toLowerCase());
         }
 
         const { myColorServer, oppColorServer, turnColorServer } =
             normalizePlayers(state.players, myNick, turnNick);
 
-        // Atualizar cores
+        // 2. Definir as Cores
         if (myColorServer != null) {
             const myColor = mapServerColor(myColorServer);
             if (myColor) {
@@ -558,6 +556,13 @@ document.addEventListener("DOMContentLoaded", () => {
             const turnColor = mapServerColor(turnColorServer);
             if (turnColor) {
                 GameState.currentPlayer = turnColor;
+                
+                // 🟢 REDE DE SEGURANÇA:
+                // Se a comparação de Nomes falhou (ex: espaços, encoding),
+                // mas as Cores coincidem, então É A MINHA VEZ.
+                if (GameState.myColor && GameState.currentPlayer === GameState.myColor) {
+                    GameState.isMyTurn = true;
+                }
             }
         }
     }
@@ -789,23 +794,19 @@ document.addEventListener("DOMContentLoaded", () => {
         //           MODO ONLINE SIMPLIFICADO
         // ===============================================
         if (isOnline) {
-            // 1. Mostrar SEMPRE o contentor e o botão
             if (dadosWrap) dadosWrap.classList.remove("hidden");
             btn.style.display = "inline-block";
 
-            // 2. Verificar se é o meu turno (com segurança de maiúsculas/minúsculas)
-            let myTurn = false;
-            if (GameState.isMyTurn === true) {
-                myTurn = true;
-            } else if (OnlineState.nick && GameState.onlinePlayers && GameState.currentPlayer) {
-                // Fallback extra
+            // 🟢 CORREÇÃO: Usar apenas truthiness (removemos o "=== true")
+            // E adicionamos a verificação das Cores como fallback extra aqui também
+            let myTurn = !!GameState.isMyTurn;
+            
+            if (!myTurn && GameState.myColor && GameState.currentPlayer) {
+                 if (GameState.myColor === GameState.currentPlayer) myTurn = true;
             }
 
-            // 3. Configurar estado do botão (Ativo vs Inativo)
             if (myTurn) {
                 btn.disabled = false; 
-
-                // Decidir o texto
                 if (GameState.mustPass && !GameState.dice?.canRepeat) {
                     btn.textContent = "Passar a vez";
                 } else {
@@ -1625,36 +1626,31 @@ document.addEventListener("DOMContentLoaded", () => {
         // =====================================================
         //                  MODO ONLINE
         // =====================================================
+        // [script.js] Dentro de onCellClick / Bloco MODO ONLINE
+
         if (OnlineState && OnlineState.game) {
 
-            // 1) Se não for a tua vez, nem tenta
+            // 1) Validações básicas
             if (!GameState.isMyTurn) {
                 setMsg("É a vez do adversário.");
                 return;
             }
-
-            // 2) Se o servidor disse que tens de passar
             if (GameState.mustPass) {
                 setMsg("Não tens jogadas válidas. Usa o botão 'Passar a vez'.");
                 return;
             }
 
-            // 3) Validar o passo (step) do servidor
             const step = GameState.onlineStep || "from";
             const isMine = isOwnPiece(r, c, cellIndex);
             
-            // Lógica de validação do clique
+            // 2) Validação do Passo
             if (step === "from") {
-                // Tens de escolher a peça a mover (tem de ser tua)
                 if (!isMine) {
                     setMsg("Escolhe uma das tuas peças.");
                     return;
                 }
             } 
             else if (step === "take") {
-                // Na captura, normalmente clica-se na peça do adversário.
-                // Se o servidor permitir cancelar clicando na tua, podes remover o bloqueio do isMine.
-                // Por agora, assumimos que o bloqueio faz sentido a menos que queiras cancelar também aqui.
                 if (isMine) {
                     setMsg("Tens de escolher a peça do adversário para capturar.");
                     return;
@@ -1665,23 +1661,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             }
             else if (step === "to") {
-                 // 🟢 CORREÇÃO DA REVERSÃO:
-                 // Verificar se o clique é num destino válido
                  const isValidDest = GameState.serverSelected && GameState.serverSelected.includes(cellIndex);
-                 
-                 // Se NÃO for um destino válido...
                  if (!isValidDest) {
-                     // ...verificamos se é uma peça MINHA (para cancelar/reverter).
-                     if (isMine) {
-                         // É a minha peça: DEIXAMOS PASSAR!
-                         // O notifyMove vai enviar o clique ao servidor, que fará a reversão.
-                     } else {
-                         // Não é minha nem é destino: Erro.
+                     // Se não é destino, só deixamos passar se for para cancelar (clique na própria peça)
+                     if (!isMine) {
                          setMsg("Clica numa das casas destacadas para mover.");
                          return;
                      }
                  }
             }
+
+            // 🟢 3) LIMPAR HIGHLIGHTS IMEDIATAMENTE (A tua sugestão)
+            // Isto remove a confusão visual enquanto esperamos pelo servidor.
+            clearHighlights();
 
             // 4) Enviar a jogada
             const canRepeatMove = GameState.dice && GameState.dice.canRepeat;
@@ -1689,7 +1681,6 @@ document.addEventListener("DOMContentLoaded", () => {
             try {
                 await notifyMove(cellIndex);
 
-                // Feedback visual imediato para repetição
                 if (canRepeatMove) {
                     GameState.dice = { sum: null, value: null, canRepeat: false };
                     GameState.mode = "awaitRoll";
@@ -1698,7 +1689,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             } catch (err) {
                 console.error("[UI] erro ao notificar jogada online:", err);
-                
                 if (err.message && err.message.includes("Wait for dice roll")) {
                      setMsg("Erro: O servidor aguarda lançamento de dados.");
                      GameState.mode = "awaitRoll";
@@ -1707,10 +1697,9 @@ document.addEventListener("DOMContentLoaded", () => {
                      setMsg(err.message || "Erro ao notificar jogada.");
                 }
             }
-
-            return; // Fim do bloco online
+            return; 
         }
-        
+
         // =========================
         //      MODO LOCAL
         // =========================
@@ -1843,180 +1832,193 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        // 1) Info de turno / cores (ONLINE)
-        // Primeiro, tentamos detetar o turno rapidamente para garantir resposta da UI
-        let serverTurn = state.turn || (state.dice && state.dice.turn);
-        if (serverTurn && OnlineState.nick) {
-            GameState.isMyTurn = (serverTurn.toLowerCase() === OnlineState.nick.toLowerCase());
+        // 🟢 1. DETETAR SE HOUVE MOVIMENTO REAL (BOARD CHANGED)
+        // Criamos uma "assinatura" do tabuleiro baseada APENAS na cor das peças.
+        // Ignoramos 'selected', 'inMotion', etc. Se a assinatura mudar, é porque uma peça mexeu.
+        let boardChanged = false;
+        
+        if (Array.isArray(state.pieces)) {
+            const getBoardSig = (pieces) => {
+                return JSON.stringify(pieces.map(p => {
+                    if (!p) return 0; // Casa vazia
+                    // Se for objeto {color: "Red", ...} devolve "Red". Se for numero 1, devolve 1.
+                    return (typeof p === "object") ? p.color : p; 
+                }));
+            };
+
+            const currentSig = getBoardSig(state.pieces);
+            
+            // Se já tinhamos um estado anterior e é diferente do atual -> MOVIMENTO
+            if (GameState.lastBoardSig && GameState.lastBoardSig !== currentSig) {
+                boardChanged = true;
+            }
+            GameState.lastBoardSig = currentSig;
         }
 
-        // Depois, aplicamos a info completa (que também valida o isMyTurn de forma robusta)
+        // 2. DETETAR MUDANÇA DE TURNO
+        const serverTurn = state.turn || (state.dice && state.dice.turn);
+        let turnChanged = false;
+        if (GameState.lastTurnNick && serverTurn && GameState.lastTurnNick !== serverTurn) {
+            turnChanged = true;
+        }
+        if (serverTurn) GameState.lastTurnNick = serverTurn;
+
+        // Atualizar isMyTurn
+        if (serverTurn && OnlineState.nick) {
+            GameState.isMyTurn = (serverTurn.trim().toLowerCase() === OnlineState.nick.trim().toLowerCase());
+        }
+
+        // 🟢 3. LIMPEZA DE DADO (A CORREÇÃO ESTÁ AQUI)
+        // Se o turno mudou OU se as peças mudaram de sítio (jogada feita), 
+        // o dado antigo já não serve. APAGAR IMEDIATAMENTE.
+        if (turnChanged || boardChanged) {
+            GameState.dice = { sum: null, value: null, canRepeat: false };
+            clearHighlights();
+        }
+
+        // 4. Info Jogadores e Cores
         if (OnlineState.game && state.players) {
             GameState.onlinePlayers = state.players;
             const previousColor = GameState.myColor;
             
-            applyOnlineTurnInfoFromState(state); // <--- Agora esta função já não estraga o turno
+            applyOnlineTurnInfoFromState(state);
             
+            // Fallback de segurança para isMyTurn baseado nas cores
+            if (!GameState.isMyTurn && GameState.myColor && GameState.currentPlayer === GameState.myColor) {
+                GameState.isMyTurn = true;
+            }
+
             if (GameState.myColor && !previousColor) {
                 renderBoard();
             }
         }
 
-        // 🟢 2) ATUALIZAR PEÇAS (Isto tem de acontecer ANTES de verificar se alguém ganhou)
+        // 5. Atualizar Peças (Visual)
         if (Array.isArray(state.pieces)) {
             GameState.serverPieces = state.pieces.slice();
-
             const rows = GameState.rows;
             const cols = GameState.cols;
-            const newBoard = Array.from({ length: rows }, () =>
-                Array.from({ length: cols }, () => null)
-            );
+            const newBoard = Array.from({ length: rows }, () => Array.from({ length: cols }, () => null));
 
             state.pieces.forEach((p, idx) => {
-                if (!p) return; // casa vazia
-
+                if (!p) return; 
                 let color = null;
                 if (typeof p === "number") {
-                    if (p === 1) color = "Blue";
-                    else if (p === 2) color = "Red";
-                } else if (typeof p === "object") {
-                    color = p.color;
-                }
-
+                    if (p === 1) color = "Blue"; else if (p === 2) color = "Red";
+                } else if (typeof p === "object") { color = p.color; }
                 if (!color) return;
-
                 const ownerChar = (color === "Blue") ? "A" : "V";
                 const { r, c } = cellIndexToRC(idx);
                 const inMotion = (typeof p === "object") ? !!p.inMotion : false;
                 const stage = inMotion ? STAGE.HAS_BEEN_LAST : STAGE.NOT_MOVED;
-
                 if (r >= 0 && r < rows && c >= 0 && c < cols) {
                     newBoard[r][c] = { owner: ownerChar, stage };
                 }
             });
-
             GameState.board = newBoard;
-            renderBoard(); // <--- O tabuleiro atualiza aqui, removendo a última peça comida
+            renderBoard(); 
         }
 
-        // 3) Guardar o passo atual
-        if (typeof state.step === "string") {
-            GameState.onlineStep = state.step;
-        } else {
-            GameState.onlineStep = null;
-        }
+        // 6. Passo e Seleção
+        GameState.onlineStep = (typeof state.step === "string") ? state.step : null;
+        GameState.serverSelected = Array.isArray(state.selected) ? state.selected.slice() : null;
 
-        if (Array.isArray(state.selected)) {
-            GameState.serverSelected = state.selected.slice();
-        } else {
-            GameState.serverSelected = null;
-        }
-
-        // 4) Atualizar dados / lógica de botões
+        // 7. LÓGICA DO DADO (RECEBER NOVO OU MANTER)
         if (state.dice) {
+            // === SERVIDOR ENVIOU DADOS NOVOS ===
             const diceState = state.dice;
-            const myTurn = (GameState.isMyTurn === true); // Já calculado no início
-            const rawMustPass = state.mustPass;
-            const myNick = OnlineState.nick;
+            if (diceState.stickValues) setDiceVisualFromStickValues(diceState.stickValues);
 
-            const iMustPass =
-                typeof rawMustPass === "string" &&
-                typeof myNick === "string" &&
-                rawMustPass.trim().toLowerCase() === myNick.trim().toLowerCase();
-
-            if (diceState.stickValues) {
-                setDiceVisualFromStickValues(diceState.stickValues);
-            }
-
-            const d = {
-                sum: null,
-                value: diceState.value,
-                canRepeat: !!diceState.keepPlaying
-            };
+            const d = { sum: null, value: diceState.value, canRepeat: !!diceState.keepPlaying };
             GameState.dice = d;
             GameState.isRolling = false;
 
-            if (!myTurn) {
+            const myNick = OnlineState.nick;
+            const rawMustPass = state.mustPass;
+            const iMustPass = typeof rawMustPass === "string" && typeof myNick === "string" &&
+                rawMustPass.trim().toLowerCase() === myNick.trim().toLowerCase();
+
+            if (!GameState.isMyTurn) {
                 GameState.mustPass = false;
                 GameState.mode = "awaitRoll";
-                setMsg(`É a vez do adversário.\nSaiu ${d.value}.`);
-                updateRollUI();
-            }
-            else if (iMustPass && d.canRepeat) {
+                setMsg(`Saiu ${d.value}.`);
+            } else if (iMustPass) {
                 GameState.mustPass = true;
                 GameState.mode = "awaitRoll";
-                setMsg(`Saiu ${d.value}.\nNão tens jogadas válidas.\nLança de novo.`);
-                updateRollUI();
-            }
-            else if (iMustPass && !d.canRepeat) {
-                GameState.mustPass = true;
-                GameState.mode = "awaitRoll";
-                setMsg(`Saiu ${d.value}.\nNão tens jogadas válidas.\nUsa o botão "Passar a vez".`);
-                updateRollUI();
-            }
-            else {
+                const txt = d.canRepeat ? "Lança de novo." : "Usa o botão 'Passar a vez'.";
+                setMsg(`Saiu ${d.value}.\nNão tens jogadas válidas.\n${txt}`);
+            } else {
                 GameState.mustPass = false;
-                // Se o servidor enviou dados, é para escolher peça,
-                // a menos que o step diga o contrário.
                 applyRollResult(d); 
             }
-        }
+            updateRollUI();
+        } 
         else {
-            // Updates sem dados
+            // === UPDATE SEM DADOS ===
+            
+            // Se "turnChanged" ou "boardChanged" já limparam o dado lá em cima, perfeito.
+            // Se nada mudou (apenas seleção/reversão), mantemos o dado.
+            
             if (GameState.onlineStep) {
                 GameState.mode = "awaitPiece";
             } else {
                 GameState.mode = "awaitRoll";
+                // Limpeza de segurança extra
+                if (!GameState.dice?.value) { 
+                    GameState.dice = { sum: null, value: null, canRepeat: false };
+                }
             }
-            GameState.dice = { sum: null, value: null, canRepeat: false };
             updateRollUI();
         }
 
+        // 8. Vencedor
         if ("winner" in state) {
             const winnerNick = state.winner;
-
-            if (winnerNick === null) {
-                setMsg("O jogo online foi cancelado.");
-            } else {
-                const players = state.players || GameState.onlinePlayers || null;
-                let winnerDisplay;
-
-                if (players) {
-                    const winnerColorServer = players[winnerNick];
-                    if (winnerColorServer) {
-                        const winnerColor = mapServerColor(winnerColorServer);
-                        winnerDisplay = winnerLabelForDisplay(winnerColor);
-                    }
-                }
-                if (!winnerDisplay) winnerDisplay = winnerNick;
-
-                setMsg(`Fim do jogo online!\n${winnerDisplay} ganhou!`);
+            let msgText = "O jogo online foi cancelado.";
+            if (winnerNick !== null) {
+                 msgText = `Fim do jogo online!\n${winnerNick} ganhou!`;
+                 const players = state.players || GameState.onlinePlayers;
+                 if (players && players[winnerNick]) {
+                     const c = mapServerColor(players[winnerNick]);
+                     if (c) msgText = `Fim do jogo online!\n${winnerLabelForDisplay(c)} ganhou!`;
+                 }
             }
-
-            // Parar updates e limpar estado online
+            setMsg(msgText);
             stopUpdateListener();
             OnlineState.game = null;
             GameState.inGame = false;
             GameState.mode = "finished";
-            
-            if (typeof clearHighlights === "function") clearHighlights();
+            clearHighlights();
             updateRollUI();
-
-            // ⏱️ TEMPORIZADOR PARA VOLTAR AO MENU (4 Segundos)
+            
             setTimeout(() => {
-                restartToModeSelection(); // Limpa tudo e volta aos botões iniciais
-                closeAllMenus();          // Garante que menus ficam fechados
-                toggleMsgPanel(false);    // Esconde a mensagem de vitória
+                restartToModeSelection(); 
+                closeAllMenus();          
+                toggleMsgPanel(false);    
             }, 4000);
-
             return;
         }
-        if (OnlineState.game && !state.winner) {
-            applyServerDestinationHighlights();
-        }
 
+        // 9. HIGHLIGHTS (FINAL)
+        if (OnlineState.game && !state.winner && GameState.isMyTurn) {
+            const step = GameState.onlineStep;
+
+            if (step === "to" || step === "take") {
+                applyServerDestinationHighlights();
+            } 
+            else if (step === "from") {
+                // Reversão/Seleção:
+                // Graças ao boardChanged, se acabámos de mover a peça, o dado foi apagado e isto não corre.
+                // Se só clicámos para cancelar, o boardChanged é false, o dado existe, e isto corre!
+                if (GameState.dice && GameState.dice.value) {
+                    highlightMoveablePieces();
+                } else {
+                    clearHighlights();
+                }
+            }
+        }
     }
-    
+
     window.handleServerUpdate = handleServerUpdate;
 
     function applyServerDestinationHighlights() {
