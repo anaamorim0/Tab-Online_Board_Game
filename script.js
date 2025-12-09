@@ -1620,7 +1620,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (isAITurnNow()) return;
         if (GameState.mode === "finished") return;
 
-        // [script.js] Dentro de onCellClick
+        // [script.js] Dentro de onCellClick / Bloco MODO ONLINE
 
         // =====================================================
         //                  MODO ONLINE
@@ -1652,55 +1652,53 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             } 
             else if (step === "take") {
-                // Tens de escolher peça do adversário (NÃO pode ser tua)
+                // Na captura, normalmente clica-se na peça do adversário.
+                // Se o servidor permitir cancelar clicando na tua, podes remover o bloqueio do isMine.
+                // Por agora, assumimos que o bloqueio faz sentido a menos que queiras cancelar também aqui.
                 if (isMine) {
                     setMsg("Tens de escolher a peça do adversário para capturar.");
                     return;
                 }
-                // Validar se o clique é numa das opções válidas enviadas pelo servidor
                 if (GameState.serverSelected && !GameState.serverSelected.includes(cellIndex)) {
                      setMsg("Clica numa das peças destacadas para capturar.");
                      return;
                 }
             }
             else if (step === "to") {
-                 // Estás a escolher um destino (bifurcação ou fim de movimento)
-                 // Validar se o clique é num dos destinos válidos (serverSelected)
-                 if (GameState.serverSelected && !GameState.serverSelected.includes(cellIndex)) {
-                     // Se clicaste na própria peça ou fora, tenta dar feedback
+                 // 🟢 CORREÇÃO DA REVERSÃO:
+                 // Verificar se o clique é num destino válido
+                 const isValidDest = GameState.serverSelected && GameState.serverSelected.includes(cellIndex);
+                 
+                 // Se NÃO for um destino válido...
+                 if (!isValidDest) {
+                     // ...verificamos se é uma peça MINHA (para cancelar/reverter).
                      if (isMine) {
-                         setMsg("Já selecionaste esta peça. Agora escolhe o destino destacado.");
+                         // É a minha peça: DEIXAMOS PASSAR!
+                         // O notifyMove vai enviar o clique ao servidor, que fará a reversão.
                      } else {
+                         // Não é minha nem é destino: Erro.
                          setMsg("Clica numa das casas destacadas para mover.");
+                         return;
                      }
-                     return;
                  }
             }
 
             // 4) Enviar a jogada
-            // Guardar info de repetição antes do await
             const canRepeatMove = GameState.dice && GameState.dice.canRepeat;
 
             try {
-                // Enviar o índice da célula clicada
                 await notifyMove(cellIndex);
 
-                // Feedback imediato para repetição (Workaround visual)
+                // Feedback visual imediato para repetição
                 if (canRepeatMove) {
                     GameState.dice = { sum: null, value: null, canRepeat: false };
                     GameState.mode = "awaitRoll";
                     updateRollUI();
-                } else {
-                    // Se não for repetição, assumimos que passamos para o estado de espera
-                    // até vir o próximo update.
-                    // Importante: NÃO mudar para awaitRoll aqui se for bifurcação,
-                    // mas o notifyMove já retornou, por isso o servidor já deve ter processado.
                 }
 
             } catch (err) {
                 console.error("[UI] erro ao notificar jogada online:", err);
                 
-                // Tratamento específico de erros comuns
                 if (err.message && err.message.includes("Wait for dice roll")) {
                      setMsg("Erro: O servidor aguarda lançamento de dados.");
                      GameState.mode = "awaitRoll";
@@ -1712,7 +1710,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             return; // Fim do bloco online
         }
-
+        
         // =========================
         //      MODO LOCAL
         // =========================
