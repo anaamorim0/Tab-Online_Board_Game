@@ -324,7 +324,6 @@ document.addEventListener("DOMContentLoaded", () => {
             try {
                 await leaveGame(); 
             } catch (err) {
-                console.error("[UI] erro ao fazer leave:", err);
                 alert("Erro ao comunicar com o servidor.");
             }
         }
@@ -860,7 +859,6 @@ document.addEventListener("DOMContentLoaded", () => {
         // No pior caso, se for "Azul"/"Vermelho" já normalizado, devolve tal e qual
         if (c === "Azul" || c === "Vermelho") return c;
 
-        console.warn("[mapServerColor] cor desconhecida do servidor:", c);
         return null;
     }
 
@@ -1051,7 +1049,6 @@ document.addEventListener("DOMContentLoaded", () => {
                             // Sucesso, aguarda update do servidor
                         })
                         .catch(err => {
-                            console.error("[UI] erro ao passar a vez online:", err);
                             alert(err.message || "Erro ao passar a vez online.");
                             if (btn) btn.disabled = false;
                         });
@@ -1071,7 +1068,6 @@ document.addEventListener("DOMContentLoaded", () => {
                         // Sucesso, o resultado vem no handleServerUpdate
                     })
                     .catch(err => {
-                        console.error("[UI] erro ao lançar dados online:", err);
                         alert(err.message || "Erro ao lançar dados online.");
                         GameState.isRolling = false;
                         if (btn) btn.disabled = false;
@@ -1697,7 +1693,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
             } catch (err) {
-                console.error("[UI] erro ao notificar jogada online:", err);
                 if (err.message && err.message.includes("Wait for dice roll")) {
                      setMsg("Erro: O servidor aguarda lançamento de dados.");
                      GameState.mode = "awaitRoll";
@@ -1837,7 +1832,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function handleServerUpdate(state) {
         if (!state || state.error) {
-            console.error("[UI] erro de estado do servidor:", state && state.error);
             return;
         }
 

@@ -85,8 +85,12 @@ async function joinGame(size) {
         throw new Error("Tamanho de tabuleiro inválido.");
     }
 
+    const sizeStr = boardSize < 10 ? `0${boardSize}` : `${boardSize}`;
+    
+    const dynamicGroup = parseInt(`${GROUP_ID}${sizeStr}`); 
+
     const body = {
-        group: GROUP_ID,
+        group: dynamicGroup,
         nick: nick,
         password: password,
         size: boardSize
@@ -106,7 +110,6 @@ async function joinGame(size) {
 
 function startUpdateListener() {
     if (!OnlineState.game || !OnlineState.nick) {
-        console.error("[update] Não há game ou nick definidos.");
         return;
     }
 
@@ -132,12 +135,10 @@ function startUpdateListener() {
             handleServerUpdate(data);
 
         } catch (e) {
-            console.error("[update] erro ao fazer parse do JSON:", e);
         }
     };
 
     updateSource.onerror = (err) => {
-        console.error("[update] erro no EventSource:", err);
     };
 }
 
@@ -169,12 +170,10 @@ async function rollGame() {
     try {
         result = await postJSON("roll", body);
     } catch (err) {
-        console.error("[roll] erro na comunicação com o servidor:", err);
         throw err;
     }
 
     if (result.error) {
-        console.error("[roll] erro do servidor:", result.error);
         // por ex: "Not your turn to play"
         throw new Error(result.error);
     }
@@ -204,12 +203,10 @@ async function passGame() {
     try {
         result = await postJSON("pass", body);   // POST /pass
     } catch (err) {
-        console.error("[pass] erro na comunicação com o servidor:", err);
         throw err;
     }
 
     if (result.error) {
-        console.error("[pass] erro do servidor:", result.error);
         throw new Error(result.error);
     }
 
@@ -245,12 +242,10 @@ async function notifyMove(cell) {
     try {
         result = await postJSON("notify", body);   // POST /notify
     } catch (err) {
-        console.error("[notify] erro na comunicação com o servidor:", err);
         throw err;
     }
 
     if (result.error) {
-        console.error("[notify] erro do servidor:", result.error);
         throw new Error(result.error);
     }
 
@@ -263,11 +258,9 @@ window.notifyMove = notifyMove;
 // Leave
 async function leaveGame() {
     if (!OnlineState || !OnlineState.nick || !OnlineState.password) {
-        console.warn("[leave] Sem sessão iniciada.");
         return;
     }
     if (!OnlineState.game) {
-        console.warn("[leave] Nenhum jogo online ativo.");
         return;
     }
 
@@ -281,12 +274,10 @@ async function leaveGame() {
     try {
         result = await postJSON("leave", body);
     } catch (err) {
-        console.error("[leave] erro na comunicação com o servidor:", err);
         throw err;
     }
 
     if (result.error) {
-        console.error("[leave] erro do servidor:", result.error);
         throw new Error(result.error);
     }
 
