@@ -85,12 +85,8 @@ async function joinGame(size) {
         throw new Error("Tamanho de tabuleiro inválido.");
     }
 
-    const sizeStr = boardSize < 10 ? `0${boardSize}` : `${boardSize}`;
-    
-    const dynamicGroup = parseInt(`${GROUP_ID}${sizeStr}`); 
-
     const body = {
-        group: dynamicGroup,
+        group: GROUP_ID,
         nick: nick,
         password: password,
         size: boardSize
@@ -131,7 +127,6 @@ function startUpdateListener() {
         try {
             const data = JSON.parse(event.data);
 
-            // <- chama a função no script.js
             handleServerUpdate(data);
 
         } catch (e) {
@@ -174,7 +169,6 @@ async function rollGame() {
     }
 
     if (result.error) {
-        // por ex: "Not your turn to play"
         throw new Error(result.error);
     }
 
@@ -201,7 +195,7 @@ async function passGame() {
 
     let result;
     try {
-        result = await postJSON("pass", body);   // POST /pass
+        result = await postJSON("pass", body);
     } catch (err) {
         throw err;
     }
@@ -210,7 +204,6 @@ async function passGame() {
         throw new Error(result.error);
     }
 
-    // Normalmente é {} – o novo estado (novo turno) vem depois no /update
     return result;
 }
 
@@ -285,6 +278,29 @@ async function leaveGame() {
     return result;
 }
 
-
-
 window.leaveGame = leaveGame;
+
+// Ranking
+async function getRanking(size) {
+    const boardSize = Number(size);
+    
+    // Validação básica do tamanho
+    if (!Number.isInteger(boardSize) || boardSize <= 0) {
+        throw new Error("Tamanho de tabuleiro inválido.");
+    }
+
+    const body = {
+        group: GROUP_ID,
+        size: boardSize
+    };
+
+    const result = await postJSON("ranking", body);
+
+    if (!result.ranking) {
+        return [];
+    }
+
+    return result.ranking;
+}
+
+window.getRanking = getRanking;

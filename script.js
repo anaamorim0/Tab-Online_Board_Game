@@ -51,16 +51,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function ensurePanelVisible(panel) {
         if (!panel) return;
-        // mede no estado atual
+        
+        // 👇 1. Reset: Removemos o overlay para medir a posição "original" (lateral)
+        panel.classList.remove("panel-overlay");
+
+        // 2. Mede no estado original
         const r = panel.getBoundingClientRect();
+        
+        // 3. Verifica se cabe no ecrã
         const fits =
             r.left >= 0 &&
             r.right <= window.innerWidth &&
             r.top >= 0 &&
             r.bottom <= window.innerHeight;
 
-        // se não couber, ativa overlay; se couber, volta ao layout normal
-        panel.classList.toggle("panel-overlay", !fits);
+        // 4. Se NÃO couber, volta a adicionar o overlay
+        if (!fits) {
+            panel.classList.add("panel-overlay");
+        }
     }
 
     window.addEventListener("resize", () => {
@@ -102,7 +110,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     usernameInput.addEventListener("input", updateLoginButtonState);
-    passwordInput.addEventListener("input", updateLoginButtonState);~
+    passwordInput.addEventListener("input", updateLoginButtonState);
 
     loginForm.addEventListener("submit", async (ev) => {
         ev.preventDefault();
@@ -322,11 +330,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (OnlineState.game) {
             try {
-                // 👇 ADICIONAR ESTA FLAG
                 GameState.playerSurrendered = true; 
-                
+                toggleMsgPanel(true);
                 await leaveGame();
-                setMsg("A processar desistência...");
                 return; // O código pára aqui e espera pelo handleServerUpdate
             } catch (err) {
                 alert("Erro ao comunicar com o servidor.");
@@ -344,13 +350,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Guardar classificação local
         try {
-            const nivel = GameState.vsAI ? (GameState.aiDifficulty || "Fácil") : "PvP";
+            const nivel = GameState.aiDifficulty || "Fácil";
             saveClassification(nivel, winnerDisplay);
             if (!classMenu.classList.contains("hidden")) renderClassifications();
         } catch (_) { }
 
         const DESISTIR_DELAY = 1200;
-        setMsgTemp(`Jogador desistiu do jogo.\n${winnerDisplay} ganhou.`, DESISTIR_DELAY);
 
         setTimeout(() => {
             restartToModeSelection();
@@ -426,7 +431,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // 2. MODO IA
         if (GameState.vsAI) {
             const isAIturn = GameState.currentPlayer === GameState.aiColorLabel;
-            header = isAIturn ? "É a vez da IA jogar." : "É a sua vez de jogar.";
+            header = isAIturn ? "É a vez da IA jogar.\n" : "É a sua vez de jogar.\n";
         } 
 
         msgEl.textContent = `${header}${t}`;
@@ -604,27 +609,103 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    function renderClassifications() {
+    // [script.js] - Substituir a função renderClassifications existente por esta:
+
+    async function renderClassifications() {
         const tbody = document.getElementById("classTbody");
         const clearBtn = document.getElementById("clearButton");
+        const tableHeadRow = document.querySelector("#table-class thead tr"); // Para mudar os títulos
+        
         if (!tbody) return;
 
-        const list = JSON.parse(localStorage.getItem("classificacoes")) || [];
+        tbody.innerHTML = ""; // Limpa a tabela atual
 
-        const rows = [...list].reverse();
+        // === MODO ONLINE (Se utilizador estiver logado) ===
+        if (isLoggedIn) {
+            
+            // 1. Ajustar Cabeçalhos para o formato do Servidor
+            if (tableHeadRow) {
+                tableHeadRow.innerHTML = `
+                    <th>Jogador</th>
+                    <th>Vitórias</th>
+                    <th>Jogos</th>
+                `;
+            }
 
-        tbody.innerHTML = "";
-        rows.forEach(({ data, nivelAI, vencedor }) => {
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-            <td>${data}</td>
-            <td>${nivelAI}</td>
-            <td>${vencedor}</td>
-            `;
-            tbody.appendChild(tr);
-        });
+            // 2. Esconder botão de limpar (não podemos apagar dados do servidor)
+            if (clearBtn) clearBtn.style.display = "none";
 
-        if (clearBtn) clearBtn.disabled = list.length === 0;
+            // 3. Obter tamanho selecionado nas definições
+            const currentSize = parseInt(sizeSelect.value, 10);
+
+            try {
+                // Chama a função criada no server.js
+                const rankingList = await getRanking(currentSize);
+
+                tbody.innerHTML = ""; // Limpa o "A carregar..."
+
+                if (!rankingList || rankingList.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="3">Sem classificações para tamanho do tabuleiro = ${currentSize}.</td></tr>`;
+                    return;
+                }
+
+                // 4. Preencher a tabela com dados do servidor
+                // O servidor devolve array de objetos: { nick, victories, games }
+                rankingList.forEach((player) => {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td>${player.nick}</td>
+                        <td>${player.victories}</td>
+                        <td>${player.games}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="3">Erro: ${err.message}</td></tr>`;
+            }
+
+        } 
+        
+        // === MODO LOCAL (Se NÃO estiver logado) ===
+        else {
+            
+            // 1. Restaurar Cabeçalhos Originais
+            if (tableHeadRow) {
+                tableHeadRow.innerHTML = `
+                    <th>Data</th>
+                    <th>Nível AI</th>
+                    <th>Vencedor</th>
+                `;
+            }
+
+            // 2. Mostrar botão de limpar
+            if (clearBtn) {
+                clearBtn.style.display = "inline-block";
+                // Verifica se há dados para habilitar/desabilitar o botão
+                const list = JSON.parse(localStorage.getItem("classificacoes")) || [];
+                clearBtn.disabled = list.length === 0;
+            }
+
+            // 3. Ler do LocalStorage
+            const list = JSON.parse(localStorage.getItem("classificacoes")) || [];
+            const rows = [...list].reverse(); // Mais recentes primeiro
+
+            if (rows.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3">Sem jogos guardados localmente.</td></tr>`;
+                return;
+            }
+
+            rows.forEach(({ data, nivelAI, vencedor }) => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${data}</td>
+                    <td>${nivelAI}</td>
+                    <td>${vencedor}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
     }
 
     // Classificações - atualiza a tabela
@@ -873,9 +954,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 // MODO ONLINE: Só aparece se for a minha vez
                 shouldShow = GameState.isMyTurn;
             } else {
-                // MODO LOCAL (PvP ou IA):
-                // Se for contra IA, esconde durante o turno da IA.
-                // Se for PvP, aparece sempre (pois é sempre vez de um humano).
                 shouldShow = isHumanTurnNow();
             }
         }
@@ -1095,7 +1173,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             // =====================================================
-            //           MODO LOCAL (PvP / IA) - Mantém-se igual
+            //           MODO LOCAL (IA) - Mantém-se igual
             // =====================================================
             if (GameState.mode === "awaitRoll" && GameState.mustPass) {
                 GameState.mustPass = false;
@@ -1307,7 +1385,7 @@ document.addEventListener("DOMContentLoaded", () => {
             updateDesistirUI();
 
             try {
-                const nivel = GameState.vsAI ? (GameState.aiDifficulty || "Fácil") : "PvP";
+                const nivel = GameState.aiDifficulty || "Fácil";
                 saveClassification(nivel, winnerDisplay);
                 if (!classMenu.classList.contains("hidden")) renderClassifications();
             } catch (_) { /* silencioso */ }
@@ -2061,6 +2139,8 @@ document.addEventListener("DOMContentLoaded", () => {
             if (GameState.playerSurrendered) {
                 msgText = `Desististe do jogo.\n${winnerDisplay} venceu.`;
             }
+
+            toggleMsgPanel(true);
 
             // Força a mensagem a aparecer
             setMsg(msgText, { force: true });
