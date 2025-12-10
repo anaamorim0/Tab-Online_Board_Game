@@ -236,8 +236,11 @@ document.addEventListener("DOMContentLoaded", () => {
         GameState.vsAI = false;
         toggleMsgPanel(true);
 
-        announceAwaitRoll(GameState.currentPlayer);
-        
+        if (OnlineState.game) {
+            setMsg("");
+        } else {
+            announceAwaitRoll(GameState.currentPlayer);
+        }
         if (!OnlineState.game || GameState.myColor) {
             renderBoard(); 
         }
@@ -305,29 +308,32 @@ document.addEventListener("DOMContentLoaded", () => {
             setMsg("A IA vai lançar os dados...");
             scheduleAI(AI_DELAY.ROLL);
         } else {
-            setMsg('Carregue em "Lançar Dados".');
+            setMsg('Clique em "Lançar Dados".');
         }
     });
 
     // Botão Desistir - atribui vencedor, guarda classificação e recomeça
     desistirButton.addEventListener("click", async () => {
         if (!GameState.inGame) return;
-
-        if (!OnlineState.game && !isHumanTurnNow()) {
-            return;
-        }
+        if (OnlineState.game && !GameState.isMyTurn) return;
 
         const confirma = confirm("Tens a certeza que queres desistir do jogo?");
         if (!confirma) return;
 
         if (OnlineState.game) {
             try {
-                await leaveGame(); 
+                // 👇 ADICIONAR ESTA FLAG
+                GameState.playerSurrendered = true; 
+                
+                await leaveGame();
+                setMsg("A processar desistência...");
+                return; // O código pára aqui e espera pelo handleServerUpdate
             } catch (err) {
                 alert("Erro ao comunicar com o servidor.");
             }
         }
 
+        // === MODO LOCAL (Só executa se NÃO estiver online ou se o leaveGame falhar) ===
         closeAllMenus();
 
         const winnerColor = GameState.vsAI
@@ -336,6 +342,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const winnerDisplay = winnerLabelForDisplay(winnerColor);
 
+        // Guardar classificação local
         try {
             const nivel = GameState.vsAI ? (GameState.aiDifficulty || "Fácil") : "PvP";
             saveClassification(nivel, winnerDisplay);
@@ -347,11 +354,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
         setTimeout(() => {
             restartToModeSelection();
+            
             desistirButton.classList.add("hidden");
+            const dadosWrap = document.getElementById("dadosWrap");
+            if (dadosWrap) dadosWrap.classList.add("hidden");
+            const btn = document.getElementById("baralharDados");
+            if (btn) btn.style.display = "none";
+
             updateDesistirUI();
         }, DESISTIR_DELAY);
     });
-
 
     // Animação Dados
     function baralharDados() {
@@ -410,25 +422,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
         let header = "";
 
-        // 1. MODO ONLINE
-        if (OnlineState && OnlineState.game) {
-            if (GameState.isMyTurn) {
-                header = "É a sua vez de jogar.";
-            } else {
-                header = "É a vez do adversário.";
-            }
-        } 
+
         // 2. MODO IA
-        else if (GameState.vsAI) {
+        if (GameState.vsAI) {
             const isAIturn = GameState.currentPlayer === GameState.aiColorLabel;
             header = isAIturn ? "É a vez da IA jogar." : "É a sua vez de jogar.";
         } 
-        // 3. MODO PvP LOCAL
-        else {
-            header = `É a vez do jogador ${GameState.currentPlayer}.`;
-        }
 
-        msgEl.textContent = `${header}\n${t}`;
+        msgEl.textContent = `${header}${t}`;
     }
 
     function setMsgTemp(texto, ms = 2000, { force = true } = {}) {
@@ -447,7 +448,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function announceAwaitRoll(playerLabel = GameState.currentPlayer) {
         const isAI = GameState.vsAI && playerLabel === GameState.aiColorLabel;
-        const body = isAI ? "A IA vai lançar os dados..." : "Carregue em \"Lançar Dados\".";
+        const body = isAI ? "A IA vai lançar os dados..." : "Clique em \"Lançar Dados\".";
         setMsg(body);
     }
 
@@ -500,19 +501,13 @@ document.addEventListener("DOMContentLoaded", () => {
         if (turnNick && players[turnNick] != null) {
             turnColorServer = players[turnNick];
         }
-
-        if (!myColorServer || !turnColorServer) {
-            const blueNick = players.Blue ?? players["1"];
-            const redNick  = players.Red  ?? players["2"];
-
-            if (!myColorServer) {
-                if (blueNick === myNick) myColorServer = "Blue";
-                else if (redNick === myNick) myColorServer = "Red";
-            }
-
-            if (turnNick && !turnColorServer) {
-                if (blueNick === turnNick) turnColorServer = "Blue";
-                else if (redNick === turnNick) turnColorServer = "Red";
+    
+        if (!myColorServer) {
+            if (blueNick && myNick && blueNick.trim().toLowerCase() === myNick.trim().toLowerCase()) {
+                myColorServer = "Blue";
+            } 
+            else if (redNick && myNick && redNick.trim().toLowerCase() === myNick.trim().toLowerCase()) {
+                myColorServer = "Red";
             }
         }
 
@@ -649,6 +644,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (dadosWrap) dadosWrap.classList.add("hidden");
 
         GameState.inGame = false;
+        setMsg("");
         toggleMsgPanel(false);
         GameState.mode = "awaitRoll";
         GameState.currentPlayer = "Azul";
@@ -821,8 +817,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     btn.textContent = "Lançar Dados";
                 }
             } else {
-                btn.disabled = true; 
-                btn.textContent = "Aguardando adversário...";
+                btn.style.display = "none";
             }
             return;
         }
@@ -864,10 +859,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
     // Atualiza botão de desistir
+    // [script.js] - Substituir a função updateDesistirUI completa
+
     function updateDesistirUI() {
         if (!desistirButton) return;
 
-        const hide = !GameState.inGame || GameState.mode === "finished" || !isHumanTurnNow();
+        let shouldShow = false;
+
+        // Só mostramos o botão se o jogo estiver a decorrer e não tiver acabado
+        if (GameState.inGame && GameState.mode !== "finished") {
+            
+            if (OnlineState.game) {
+                // MODO ONLINE: Só aparece se for a minha vez
+                shouldShow = GameState.isMyTurn;
+            } else {
+                // MODO LOCAL (PvP ou IA):
+                // Se for contra IA, esconde durante o turno da IA.
+                // Se for PvP, aparece sempre (pois é sempre vez de um humano).
+                shouldShow = isHumanTurnNow();
+            }
+        }
+
+        // Aplica a visibilidade
+        const hide = !shouldShow;
         desistirButton.classList.toggle("hidden", hide);
         desistirButton.disabled = hide;
     }
@@ -1026,13 +1040,6 @@ document.addEventListener("DOMContentLoaded", () => {
             // =====================================================
             if (OnlineState.game) {
 
-                // 1. Verificar se é a minha vez
-                // (Se o botão estiver visível mas desativado, o click não entra aqui,
-                // mas se por acaso entrar, garantimos que não faz nada).
-                if (GameState.isMyTurn === false) {
-                    setMsg("É a vez do adversário.");
-                    return;
-                }
 
                 // 2. Verificar o estado do jogo
 
@@ -1041,8 +1048,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (GameState.mustPass && !GameState.dice?.canRepeat) {
                     const btn = document.getElementById("baralharDados");
                     if (btn) btn.disabled = true;
-
-                    setMsg("A passar a vez...");
 
                     passGame()
                         .then(() => {
@@ -1061,14 +1066,26 @@ document.addEventListener("DOMContentLoaded", () => {
                 const btn = document.getElementById("baralharDados");
                 if (btn) btn.disabled = true;
 
-                setMsg("A lançar dados online...");
-
                 rollGame()
                     .then(() => {
                         // Sucesso, o resultado vem no handleServerUpdate
                     })
                     .catch(err => {
-                        alert(err.message || "Erro ao lançar dados online.");
+                        let msg = err.message || "Erro ao lançar dados online.";
+
+                        if (msg.includes("You already rolled the dice")) {
+                            msg = "Já lançaste os dados e tens jogadas válidas.";
+                        } 
+                        else if (msg.includes("Not your turn to play")) {
+                            msg = "Não é a tua vez de jogar.";
+                        }
+                        else if (msg.includes("Wait for dice roll")) {
+                            msg = "Tens de lançar os dados primeiro.";
+                        }
+
+                        setMsg("");
+                        alert(msg);
+                                                
                         GameState.isRolling = false;
                         if (btn) btn.disabled = false;
                     });
@@ -1363,8 +1380,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 const v = GameState.dice.value;
                 setMsg(
                     `Saiu ${v}.\n` +
-                    `Não tens jogadas válidas com este valor.\n` +
-                    `Como podes jogar de novo, lança o dado outra vez.`
+                    `Não tens jogadas válidas.\n` +
+                    `Como saiu ${v} pode voltar a lançar os dados..`
                 );
 
                 updateRollUI();   // aqui o botão fica visível e diz "Lançar Dados"
@@ -1635,13 +1652,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (OnlineState && OnlineState.game) {
 
-            // 1) Validações básicas
-            if (!GameState.isMyTurn) {
-                setMsg("É a vez do adversário.");
-                return;
-            }
+
             if (GameState.mustPass) {
-                setMsg("Não tens jogadas válidas. Usa o botão 'Passar a vez'.");
+                setMsg("Não tens jogadas válidas. Clique em 'Passar a vez'.");
                 return;
             }
 
@@ -1693,12 +1706,24 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
             } catch (err) {
-                if (err.message && err.message.includes("Wait for dice roll")) {
-                     setMsg("Erro: O servidor aguarda lançamento de dados.");
+                let msg = err.message || "Erro ao mover peça.";
+
+                if (msg.includes("roll the stick dice first")){
+                     msg = "Tem de lançar os dados antes de mover.";
                      GameState.mode = "awaitRoll";
                      updateRollUI();
-                } else {
-                     setMsg(err.message || "Erro ao notificar jogada.");
+                }
+                else if (msg.includes("Not your turn to play")) {
+                     msg = "Não é a sua vez.";
+                }
+                else if (msg.includes("No valid moves from here")) {
+                     msg = "Jogada inválida.";
+                }
+
+                setMsg(msg);
+
+                if (GameState.dice && GameState.dice.value) {
+                    highlightMoveablePieces();
                 }
             }
             return; 
@@ -1944,53 +1969,107 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!GameState.isMyTurn) {
                 GameState.mustPass = false;
                 GameState.mode = "awaitRoll";
-                setMsg(`Saiu ${d.value}.`);
-            } else if (iMustPass) {
+                setMsg(""); 
+                toggleMsgPanel(false);
+            } else {
+                toggleMsgPanel(true); 
+            }
+            if (iMustPass) {
                 GameState.mustPass = true;
                 GameState.mode = "awaitRoll";
-                const txt = d.canRepeat ? "Lança de novo." : "Usa o botão 'Passar a vez'.";
+                const txt = d.canRepeat ? "Lança de novo." : "Clique em 'Passar a vez'.";
                 setMsg(`Saiu ${d.value}.\nNão tens jogadas válidas.\n${txt}`);
             } else {
                 GameState.mustPass = false;
-                applyRollResult(d); 
+                if (OnlineState.game && !GameState.isMyTurn) {
+                    // Se NÃO é a minha vez, apenas informo o valor, não calculo jogadas nem highlights
+                    setMsg(`Oponente obteve ${d.value}.`);
+                    clearHighlights();
+                } else {
+                    // Só calculo jogadas e mostro highlights se for a minha vez
+                    applyRollResult(d); 
+                }
             }
             updateRollUI();
         } 
+        // [script.js] Dentro de handleServerUpdate / Bloco else final
         else {
-            // === UPDATE SEM DADOS ===
-            
-            // Se "turnChanged" ou "boardChanged" já limparam o dado lá em cima, perfeito.
-            // Se nada mudou (apenas seleção/reversão), mantemos o dado.
+            // === UPDATE SEM DADOS (Início de Turno, Fim de Jogada, etc.) ===
             
             if (GameState.onlineStep) {
+                // Estamos a meio de uma jogada (escolher peça ou destino)
                 GameState.mode = "awaitPiece";
-            } else {
+            } 
+            else if (!turnChanged) {
+                // Não há passo nem mudança de turno recente -> Estamos à espera de lançar
                 GameState.mode = "awaitRoll";
-                // Limpeza de segurança extra
-                if (!GameState.dice?.value) { 
-                    GameState.dice = { sum: null, value: null, canRepeat: false };
+                
+                // Limpeza de segurança
+                if (!GameState.dice?.value) {
+                     GameState.dice = { sum: null, value: null, canRepeat: false };
+                }
+
+                // 🟢 CORREÇÃO: Atualizar mensagem para AMBOS os jogadores
+                if (GameState.isMyTurn) {
+                    // Se é a minha vez e não tenho dados, tenho de lançar
+                    setMsg("Clique em 'Lançar Dados'.");
+                } else {
+                    // Se não é a minha vez, espero
+                    setMsg("A aguardar jogada...");
                 }
             }
             updateRollUI();
         }
 
         // 8. Vencedor
-        if ("winner" in state) {
+        // CORREÇÃO: Verifica se é estritamente uma STRING não vazia. 
+        // Isto ignora objetos {}, arrays [], ou valores estranhos que o servidor possa enviar.
+        if (typeof state.winner === "string" && state.winner.trim() !== "") { 
+            
             const winnerNick = state.winner;
-            let msgText = "O jogo online foi cancelado.";
-            if (winnerNick !== null) {
-                 msgText = `Fim do jogo online!\n${winnerNick} ganhou!`;
-                 const players = state.players || GameState.onlinePlayers;
-                 if (players && players[winnerNick]) {
-                     const c = mapServerColor(players[winnerNick]);
-                     if (c) msgText = `Fim do jogo online!\n${winnerLabelForDisplay(c)} ganhou!`;
-                 }
+            
+            // Segurança extra: ignora se o servidor enviar a palavra "null" ou "undefined" como texto
+            if (winnerNick === "null" || winnerNick === "undefined") {
+                return; 
             }
-            setMsg(msgText);
+
+            let msgText = "O jogo online foi cancelado.";
+            let winnerDisplay = winnerNick; 
+
+            // Tenta descobrir a cor do vencedor
+            const players = state.players || GameState.onlinePlayers || {};
+            
+            // 1. Tenta encontrar a cor pelo nome exato
+            let rawColor = players[winnerNick];
+
+            // 2. Se falhar, tenta encontrar ignorando maiúsculas/minúsculas
+            if (!rawColor) {
+                const foundKey = Object.keys(players).find(key => 
+                    key.trim().toLowerCase() === winnerNick.trim().toLowerCase()
+                );
+                if (foundKey) rawColor = players[foundKey];
+            }
+
+            // 3. Traduz a cor (Blue->Azul)
+            if (rawColor) {
+                const c = mapServerColor(rawColor);
+                if (c) winnerDisplay = c;
+            }
+
+            msgText = `Fim do jogo!\n${winnerDisplay} venceu!`;
+
+            if (GameState.playerSurrendered) {
+                msgText = `Desististe do jogo.\n${winnerDisplay} venceu.`;
+            }
+
+            // Força a mensagem a aparecer
+            setMsg(msgText, { force: true });
+            
             stopUpdateListener();
             OnlineState.game = null;
             GameState.inGame = false;
             GameState.mode = "finished";
+            
             clearHighlights();
             updateRollUI();
             
@@ -2002,7 +2081,6 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        // 9. HIGHLIGHTS (FINAL)
         if (OnlineState.game && !state.winner && GameState.isMyTurn) {
             const step = GameState.onlineStep;
 
