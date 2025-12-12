@@ -1,17 +1,14 @@
-// users.js
 const fs = require('fs');
 const crypto = require('crypto');
 
 const FILE_PATH = './users.json';
 
-// Função auxiliar para encriptar a password (MD5)
 function hashPassword(password) {
     const hash = crypto.createHash('md5');
     hash.update(password);
     return hash.digest('hex');
 }
 
-// Ler utilizadores do ficheiro
 function getUsers() {
     try {
         if (!fs.existsSync(FILE_PATH)) {
@@ -25,42 +22,36 @@ function getUsers() {
     }
 }
 
-// Guardar utilizadores no ficheiro
 function saveUsers(users) {
     fs.writeFileSync(FILE_PATH, JSON.stringify(users, null, 2));
 }
 
-// Função Principal: Registar (ou verificar login)
 function register(nick, password) {
     const users = getUsers();
     const existingUser = users.find(u => u.nick === nick);
     const hashedPass = hashPassword(password);
 
     if (existingUser) {
-        // Se o utilizador já existe, verificamos se a password bate certo
         if (existingUser.pass === hashedPass) {
-            return { status: 200, message: "Login efetuado com sucesso." }; // Login OK
+            return { status: 200, message: "Login efetuado com sucesso." };
         } else {
-            return { status: 401, error: "User registered with a different password" }; // Password errada
+            return { status: 401, error: "User registered with a different password" };
         }
     } else {
-        // Se não existe, criamos novo
         const newUser = { nick: nick, pass: hashedPass };
         users.push(newUser);
         saveUsers(users);
         return { status: 200, message: "Utilizador registado com sucesso." };
     }
 }
-// [users.js] - Adicionar esta função antes do module.exports
 
 function validateUser(nick, password) {
     const users = getUsers();
     const user = users.find(u => u.nick === nick);
-    if (!user) return false; // Utilizador não existe
+    if (!user) return false; 
     
     const hashed = hashPassword(password);
-    return user.pass === hashed; // Retorna true se a password bater certo
+    return user.pass === hashed;
 }
 
-// Atualizar o export
 module.exports = { register, validateUser };
