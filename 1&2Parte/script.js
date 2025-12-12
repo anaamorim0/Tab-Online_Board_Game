@@ -322,7 +322,7 @@ document.addEventListener("DOMContentLoaded", () => {
             loginMenu.classList.remove("hidden");
             loginIcon.src = "http://www.alunos.dcc.fc.up.pt/~up202207213/img/user_logo_2.png";
 
-            alert("Tem de iniciar sessão para jogar online.");
+            alert("Tens de iniciar sessão para jogar online.");
             return;
         }
 
@@ -373,7 +373,7 @@ document.addEventListener("DOMContentLoaded", () => {
             setMsg("A IA vai lançar os dados...");
             scheduleAI(AI_DELAY.ROLL);
         } else {
-            setMsg('Clique em "Lançar Dados".');
+            setMsg('Clica em "Lançar Dados".');
         }
     });
 
@@ -383,7 +383,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // 1. COLA AQUI A FUNÇÃO NOVA
     // ---------------------------------------------------------
     async function executarDesistencia() {
-        const confirma = confirm("Tem a certeza que quer desistir/sair do jogo?");
+        const confirma = confirm("Tens a certeza que queres desistir/sair do jogo?");
         if (!confirma) return;
 
         // MODO ONLINE
@@ -496,7 +496,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // 2. MODO IA
         if (GameState.vsAI) {
             const isAIturn = GameState.currentPlayer === GameState.aiColorLabel;
-            header = isAIturn ? "É a vez da IA jogar.\n" : "É a sua vez de jogar.\n";
+            header = isAIturn ? "É a vez da IA jogar.\n" : "É a tua vez de jogar.\n";
         } 
 
         msgEl.textContent = `${header}${t}`;
@@ -518,7 +518,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function announceAwaitRoll(playerLabel = GameState.currentPlayer) {
         const isAI = GameState.vsAI && playerLabel === GameState.aiColorLabel;
-        const body = isAI ? "A IA vai lançar os dados..." : "Clique em \"Lançar Dados\".";
+        const body = isAI ? "A IA vai lançar os dados..." : "Clica em \"Lançar Dados\".";
         setMsg(body);
     }
 
@@ -1139,9 +1139,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
         msg += (GameState.vsAI && GameState.currentPlayer === GameState.aiColorLabel)
             ? "A IA vai escolher uma peça para jogar."
-            : "Escolha uma peça para jogar.";
+            : "Escolhe uma peça para jogar.";
 
-        if (d.canRepeat) msg += `\nComo saiu ${d.value} pode voltar a lançar os dados.\n`;
+        if (d.canRepeat) msg += `\nComo saiu ${d.value} podes voltar a lançar os dados.\n`;
 
         setMsg(msg);
         clearHighlights();
@@ -1520,7 +1520,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     setMsg(`Saiu ${v}.\nNão tens jogadas válidas.\nComo saiu ${v} deves lançar de novo.`);
                 } else {
                     // Se saiu 2 ou 3, tem de passar a vez
-                    setMsg(`Saiu ${v}.\nNão tens jogadas válidas.\nClique em 'Passar a vez'.`);
+                    setMsg(`Saiu ${v}.\nNão tens jogadas válidas.\nClica em 'Passar a vez'.`);
                 }
 
                 // Atualiza o botão para mostrar "Passar a vez" ou "Lançar Dados"
@@ -1548,7 +1548,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 setMsg(
                     `Saiu ${v}.\n` +
                     `Não é uma jogada válida.\n` +
-                    `${isAI ? "A IA passa a vez." : "Clique em 'Passar a vez'."}`
+                    `${isAI ? "A IA passa a vez." : "Clica em 'Passar a vez'."}`
                 );
             }
 
@@ -1794,7 +1794,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
             if (GameState.mustPass) {
-                setMsg("Não tens jogadas válidas. Clique em 'Passar a vez'.");
+                setMsg("Não tens jogadas válidas. Clica em 'Passar a vez'.");
                 return;
             }
 
@@ -1849,12 +1849,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 let msg = err.message || "Erro ao mover peça.";
 
                 if (msg.includes("roll the stick dice first")){
-                     msg = "Tem de lançar os dados antes de mover.";
+                     msg = "Tens de lançar os dados antes de mover.";
                      GameState.mode = "awaitRoll";
                      updateRollUI();
                 }
                 else if (msg.includes("Not your turn to play")) {
-                     msg = "Não é a sua vez.";
+                     msg = "Não é a tua vez.";
                 }
                 else if (msg.includes("No valid moves from here")) {
                      msg = "Jogada inválida.";
@@ -2118,7 +2118,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (iMustPass) {
                 GameState.mustPass = true;
                 GameState.mode = "awaitRoll";
-                const txt = d.canRepeat ? "Lança de novo." : "Clique em 'Passar a vez'.";
+                const txt = d.canRepeat ? "Lança de novo." : "Clica em 'Passar a vez'.";
                 setMsg(`Saiu ${d.value}.\nNão tens jogadas válidas.\n${txt}`);
             } else {
                 GameState.mustPass = false;
@@ -2153,7 +2153,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 // 🟢 CORREÇÃO: Atualizar mensagem para AMBOS os jogadores
                 if (GameState.isMyTurn) {
                     // Se é a minha vez e não tenho dados, tenho de lançar
-                    setMsg("Clique em 'Lançar Dados'.");
+                    setMsg("Clica em 'Lançar Dados'.");
                 }
             }
             updateRollUI();

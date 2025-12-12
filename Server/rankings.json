@@ -12,5 +12,19 @@
     "games": 47,
     "group": 9,
     "size": 9
+  },
+  {
+    "nick": "mariana2",
+    "victories": 1,
+    "games": 1,
+    "group": 9,
+    "size": 7
+  },
+  {
+    "nick": "mariana",
+    "victories": 0,
+    "games": 1,
+    "group": 9,
+    "size": 7
   }
 ]
