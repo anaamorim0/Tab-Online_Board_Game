@@ -1,7 +1,7 @@
-const SERVER_URL = "http://twserver.alunos.dcc.fc.up.pt:8008";
+//const SERVER_URL = "http://twserver.alunos.dcc.fc.up.pt:8008";
+const SERVER_URL = "http://localhost:8008"
 const GROUP_ID = 9;
 
-// Usa SEMPRE o mesmo OnlineState que vem do server.js
 const OnlineState = window.OnlineState || (window.OnlineState = {
     nick: null,
     password: null,
@@ -27,6 +27,7 @@ async function postJSON(endpoint, body) {
 
     return data;
 }
+
 
 // Register
 async function registerUser(nickArg, passArg) {
@@ -70,15 +71,10 @@ async function registerUser(nickArg, passArg) {
 window.registerUser = registerUser;
 
 
-
 // Join
 async function joinGame(size) {
     const nick = OnlineState.nick;
     const password = OnlineState.password;
-
-    if (!nick || !password) {
-        throw new Error("Tem de iniciar sessão antes de jogar online.");
-    }
 
     const boardSize = Number(size);
     if (!Number.isInteger(boardSize) || boardSize <= 0) {
@@ -93,10 +89,6 @@ async function joinGame(size) {
     };
 
     const result = await postJSON("join", body);
-
-    if (!result.game) {
-        throw new Error("Resposta inesperada do servidor em /join.");
-    }
 
     OnlineState.game = String(result.game);
 
@@ -177,21 +169,14 @@ async function rollGame() {
 
 window.rollGame = rollGame;
 
+
 // Pass
 async function passGame() {
     const nick = OnlineState.nick;
     const password = OnlineState.password;
     const game = OnlineState.game;
 
-    if (!nick || !password) {
-        throw new Error("Tem de iniciar sessão antes de passar a vez online.");
-    }
-    if (!game) {
-        throw new Error("Não está em nenhum jogo online.");
-    }
-
     const body = { nick, password, game };
-
 
     let result;
     try {
@@ -212,13 +197,6 @@ window.passGame = passGame;
 
 // Notify 
 async function notifyMove(cell) {
-    if (!OnlineState.nick || !OnlineState.password) {
-        throw new Error("Tem de iniciar sessão antes de jogar online.");
-    }
-    if (!OnlineState.game) {
-        throw new Error("Não está em nenhum jogo online.");
-    }
-
     if (!Number.isInteger(cell) || cell < 0) {
         throw new Error("cell inválido para notify: " + cell);
     }
@@ -230,10 +208,10 @@ async function notifyMove(cell) {
         cell: cell
     };
 
-
     let result;
+
     try {
-        result = await postJSON("notify", body);   // POST /notify
+        result = await postJSON("notify", body);
     } catch (err) {
         throw err;
     }
@@ -273,18 +251,16 @@ async function leaveGame() {
     if (result.error) {
         throw new Error(result.error);
     }
-
-
     return result;
 }
 
 window.leaveGame = leaveGame;
 
+
 // Ranking
 async function getRanking(size) {
     const boardSize = Number(size);
     
-    // Validação básica do tamanho
     if (!Number.isInteger(boardSize) || boardSize <= 0) {
         throw new Error("Tamanho de tabuleiro inválido.");
     }

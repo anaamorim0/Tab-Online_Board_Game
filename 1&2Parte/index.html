@@ -92,19 +92,32 @@
                 <div id="classMenu" class="class-menu hidden">
                     <h3 class="titulo-class">Classificações</h3>
                     
+                    <div class="ranking-controls">
+                        <div class="ranking-buttons-row">
+                            <button id="btnRankingLocal" class="ranking-type-btn active">Locais</button>
+                            <button id="btnRankingOnline" class="ranking-type-btn">Online</button>
+                        </div>
+                        
+                        <div id="rankingSelectRow" class="ranking-select-row hidden">
+                            <select id="rankingSizeSelect" class="ranking-size-select">
+                                <option value="9" selected>9 Colunas</option>
+                                <option value="7">7 Colunas</option>
+                                <option value="11">11 Colunas</option>
+                                <option value="13">13 Colunas</option>
+                                <option value="15">15 Colunas</option>
+                            </select>
+                        </div>
+                    </div>
+                    
                     <table id="table-class" class="table-class">
                         <thead>
-                        <tr>
-                            <th>Data</th>
-                            <th>Nível AI</th>
-                            <th>Vencedor</th>
-                        </tr>
+                            <tr></tr>
                         </thead>
                         <tbody id="classTbody"></tbody>
                     </table>
 
                     <div class="class-actions">
-                        <button id="clearButton" class="clear-button" type="button">Limpar</button>
+                        <button id="clearButton" class="clear-button" type="button">Limpar Histórico Local</button>
                     </div>
                 </div>
             

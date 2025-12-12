@@ -552,7 +552,6 @@ html, body {
     transform: scale(1.05); 
 }
 
-
 /*----------------------------------------------*/
 /* Menu Classificações */
 .class-menu {
@@ -652,6 +651,56 @@ html, body {
 .clear-button:active {
     transform: translateY(2px);
     background-color: #954c2a;
+}
+
+.ranking-controls {
+    display: flex;
+    flex-direction: column; 
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 15px;
+    width: 100%;
+}
+
+.ranking-buttons-row {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+}
+
+.ranking-type-btn {
+    padding: 4px 12px;
+    font-size: 12px; 
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #333;
+    transition: all 0.2s;
+}
+
+.ranking-type-btn.active {
+    background-color: #4caf50;
+    color: white;
+    border-color: #4caf50;
+}
+
+.ranking-select-row {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin-top: 5px;
+}
+
+.ranking-size-select {
+    padding: 2px 4px;
+    font-size: 11px;
+    height: 24px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: white;
+    cursor: pointer;
+    text-align: center;
 }
 
 

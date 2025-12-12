@@ -26,6 +26,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const loggedUsername = document.getElementById("loggedUsername");
     const logoutButton = document.getElementById("logoutButton");
     const sizeSelect = document.getElementById("sizeSelect");
+    const btnRankingLocal = document.getElementById("btnRankingLocal");
+    const btnRankingOnline = document.getElementById("btnRankingOnline");
+    const rankingSizeSelect = document.getElementById("rankingSizeSelect");
+    const rankingSelectRow = document.getElementById("rankingSelectRow");
     
     const settingsIcon = settingsButton.querySelector("img");
     const loginIcon = userButton.querySelector("img");
@@ -180,6 +184,48 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    let currentRankingMode = "local"; 
+
+    if (btnRankingLocal) {
+        btnRankingLocal.addEventListener("click", () => {
+            currentRankingMode = "local";
+            
+            btnRankingLocal.classList.add("active");
+            btnRankingOnline.classList.remove("active");
+            
+            // AGORA ESCONDEMOS A LINHA INTEIRA
+            if (rankingSelectRow) rankingSelectRow.classList.add("hidden");
+            
+            if (clearBtn) clearBtn.classList.remove("hidden");
+            renderClassifications();
+        });
+    }
+
+    // Botão ONLINE
+    if (btnRankingOnline) {
+        btnRankingOnline.addEventListener("click", () => {
+            currentRankingMode = "online";
+
+            btnRankingOnline.classList.add("active");
+            btnRankingLocal.classList.remove("active");
+
+            // AGORA MOSTRAMOS A LINHA INTEIRA
+            if (rankingSelectRow) rankingSelectRow.classList.remove("hidden");
+            
+            if (clearBtn) clearBtn.classList.add("hidden");
+            renderClassifications();
+        });
+    }
+
+    // Quando muda o tamanho no select do ranking online
+    if (rankingSizeSelect) {
+        rankingSizeSelect.addEventListener("change", () => {
+            if (currentRankingMode === "online") {
+                renderClassifications();
+            }
+        });
+    }
+
     // Menu Regras
     regrasButton.addEventListener("click", () => {
         if (regrasMenu.classList.contains("hidden")) {
@@ -222,11 +268,22 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     })();
 
-    // Botão Voltar ao início
+    // Botão Voltar ao início (Dentro das Configurações)
     if (voltarButton) {
         voltarButton.addEventListener("click", () => {
-            restartToModeSelection();
-            closeAllMenus();
+            
+            // CASO A: Jogo a decorrer -> Comporta-se IGUAL ao desistir
+            if (GameState.inGame) {
+                // Esconde o menu de settings para vermos o alerta e o jogo
+                if (settingsMenu) settingsMenu.classList.add("hidden");
+                
+                executarDesistencia();
+            } 
+            // CASO B: Apenas a navegar nos menus -> Volta ao ecrã inicial
+            else {
+                restartToModeSelection();
+                closeAllMenus();
+            }
         });
     }
 
@@ -320,55 +377,63 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Botão Desistir - atribui vencedor, guarda classificação e recomeça
-    desistirButton.addEventListener("click", async () => {
-        if (!GameState.inGame) return;
-        if (OnlineState.game && !GameState.isMyTurn) return;
+    // ... (código do Jogador vs IA acima) ...
 
-        const confirma = confirm("Tens a certeza que queres desistir do jogo?");
+    // ---------------------------------------------------------
+    // 1. COLA AQUI A FUNÇÃO NOVA
+    // ---------------------------------------------------------
+    async function executarDesistencia() {
+        const confirma = confirm("Tem a certeza que quer desistir/sair do jogo?");
         if (!confirma) return;
 
+        // MODO ONLINE
         if (OnlineState.game) {
             try {
                 GameState.playerSurrendered = true; 
+                closeAllMenus();
                 toggleMsgPanel(true);
+                setMsg("A sair do jogo...");
                 await leaveGame();
-                return; // O código pára aqui e espera pelo handleServerUpdate
             } catch (err) {
-                alert("Erro ao comunicar com o servidor.");
+                alert("Erro ao comunicar com o servidor: " + err.message);
+                restartToModeSelection();
             }
+            return; 
         }
 
-        // === MODO LOCAL (Só executa se NÃO estiver online ou se o leaveGame falhar) ===
+        // MODO LOCAL
         closeAllMenus();
-
         const winnerColor = GameState.vsAI
             ? GameState.aiColorLabel
             : (GameState.currentPlayer === "Azul" ? "Vermelho" : "Azul");
 
         const winnerDisplay = winnerLabelForDisplay(winnerColor);
 
-        // Guardar classificação local
         try {
             const nivel = GameState.aiDifficulty || "Fácil";
             saveClassification(nivel, winnerDisplay);
             if (!classMenu.classList.contains("hidden")) renderClassifications();
         } catch (_) { }
 
-        const DESISTIR_DELAY = 1200;
 
-        setTimeout(() => {
-            restartToModeSelection();
-            
-            desistirButton.classList.add("hidden");
-            const dadosWrap = document.getElementById("dadosWrap");
-            if (dadosWrap) dadosWrap.classList.add("hidden");
-            const btn = document.getElementById("baralharDados");
-            if (btn) btn.style.display = "none";
+        restartToModeSelection();
+        if (desistirButton) desistirButton.classList.add("hidden");
+        const dadosWrap = document.getElementById("dadosWrap");
+        if (dadosWrap) dadosWrap.classList.add("hidden");
+        updateDesistirUI();
 
-            updateDesistirUI();
-        }, DESISTIR_DELAY);
+    }
+
+    // ---------------------------------------------------------
+    // 2. ATUALIZA O LISTENER DO BOTÃO DESISTIR (logo abaixo)
+    // ---------------------------------------------------------
+    
+    // Botão Desistir - atribui vencedor, guarda classificação e recomeça
+    desistirButton.addEventListener("click", () => { // <--- O teu código antigo começava aqui
+        if (!GameState.inGame) return;
+        executarDesistencia(); // Agora só chama a função
     });
+
 
     // Animação Dados
     function baralharDados() {
@@ -609,49 +674,57 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    // [script.js] - Substituir a função renderClassifications existente por esta:
-
     async function renderClassifications() {
         const tbody = document.getElementById("classTbody");
-        const clearBtn = document.getElementById("clearButton");
-        const tableHeadRow = document.querySelector("#table-class thead tr"); // Para mudar os títulos
+        const theadRow = document.querySelector("#table-class thead tr");
         
-        if (!tbody) return;
+        if (!tbody || !theadRow) return;
 
-        tbody.innerHTML = ""; // Limpa a tabela atual
+        tbody.innerHTML = ""; 
 
-        // === MODO ONLINE (Se utilizador estiver logado) ===
-        if (isLoggedIn) {
+        // =================================================
+        //                 MODO ONLINE
+        // =================================================
+        if (currentRankingMode === "online") {
+            theadRow.innerHTML = `
+                <th>Jogador</th>
+                <th>Vitórias</th>
+                <th>Jogos</th>
+            `;
+
+            tbody.innerHTML = `<tr><td colspan="3">A carregar...</td></tr>`;
+
+            const size = parseInt(document.getElementById("rankingSizeSelect").value, 10);
             
-            // 1. Ajustar Cabeçalhos para o formato do Servidor
-            if (tableHeadRow) {
-                tableHeadRow.innerHTML = `
-                    <th>Jogador</th>
-                    <th>Vitórias</th>
-                    <th>Jogos</th>
-                `;
-            }
-
-            // 2. Esconder botão de limpar (não podemos apagar dados do servidor)
-            if (clearBtn) clearBtn.style.display = "none";
-
-            // 3. Obter tamanho selecionado nas definições
-            const currentSize = parseInt(sizeSelect.value, 10);
+            // O grupo tem de ser o mesmo que usas no servidor
+            const group = 9; 
 
             try {
-                // Chama a função criada no server.js
-                const rankingList = await getRanking(currentSize);
+                const response = await fetch(`${SERVER_URL}/ranking`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ group: group, size: size })
+                });
 
-                tbody.innerHTML = ""; // Limpa o "A carregar..."
+                const data = await response.json();
 
-                if (!rankingList || rankingList.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="3">Sem classificações para tamanho do tabuleiro = ${currentSize}.</td></tr>`;
+                tbody.innerHTML = ""; 
+
+                if (data.error) {
+                    tbody.innerHTML = `<tr><td colspan="3">Erro: ${data.error}</td></tr>`;
                     return;
                 }
 
-                // 4. Preencher a tabela com dados do servidor
-                // O servidor devolve array de objetos: { nick, victories, games }
-                rankingList.forEach((player) => {
+                const lista = data.ranking;
+                if (!lista || lista.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="3">Sem dados online para Tabuleiro ${size}.</td></tr>`;
+                    return;
+                }
+
+                // Ordenar por vitórias
+                lista.sort((a, b) => b.victories - a.victories);
+
+                lista.forEach(player => {
                     const tr = document.createElement("tr");
                     tr.innerHTML = `
                         <td>${player.nick}</td>
@@ -662,41 +735,32 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
 
             } catch (err) {
-                tbody.innerHTML = `<tr><td colspan="3">Erro: ${err.message}</td></tr>`;
+                console.error(err);
+                tbody.innerHTML = `<tr><td colspan="3">Erro de conexão.</td></tr>`;
             }
-
         } 
         
-        // === MODO LOCAL (Se NÃO estiver logado) ===
+        // =================================================
+        //                 MODO LOCAL
+        // =================================================
         else {
-            
-            // 1. Restaurar Cabeçalhos Originais
-            if (tableHeadRow) {
-                tableHeadRow.innerHTML = `
-                    <th>Data</th>
-                    <th>Nível AI</th>
-                    <th>Vencedor</th>
-                `;
-            }
+            theadRow.innerHTML = `
+                <th>Data</th>
+                <th>Nível AI</th>
+                <th>Vencedor</th>
+            `;
 
-            // 2. Mostrar botão de limpar
-            if (clearBtn) {
-                clearBtn.style.display = "inline-block";
-                // Verifica se há dados para habilitar/desabilitar o botão
-                const list = JSON.parse(localStorage.getItem("classificacoes")) || [];
-                clearBtn.disabled = list.length === 0;
-            }
-
-            // 3. Ler do LocalStorage
             const list = JSON.parse(localStorage.getItem("classificacoes")) || [];
-            const rows = [...list].reverse(); // Mais recentes primeiro
-
-            if (rows.length === 0) {
+            
+            if (list.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="3">Sem jogos guardados localmente.</td></tr>`;
+                if (typeof clearBtn !== 'undefined' && clearBtn) clearBtn.disabled = true;
                 return;
             }
 
-            rows.forEach(({ data, nivelAI, vencedor }) => {
+            if (typeof clearBtn !== 'undefined' && clearBtn) clearBtn.disabled = false;
+
+            [...list].reverse().forEach(({ data, nivelAI, vencedor }) => {
                 const tr = document.createElement("tr");
                 tr.innerHTML = `
                     <td>${data}</td>
@@ -706,14 +770,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 tbody.appendChild(tr);
             });
         }
-    }
-
-    // Classificações - atualiza a tabela
-    if (clearBtn) {
-        clearBtn.addEventListener("click", () => {
-            localStorage.removeItem("classificacoes");
-            renderClassifications();
-        });
     }
 
     // Restart do jogo
@@ -1447,24 +1503,30 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         highlightCells(cells);
 
-        // 👉 MODO ONLINE:
-        // Se não há jogadas possíveis COM ESTE VALOR e o dado permite repetir,
-        // então o cliente tem de pedir novo lançamento.
+        // 👉 MODO ONLINE (CORRIGIDO)
         if (OnlineState.game) {
-            if (cells.length === 0 && GameState.dice && GameState.dice.canRepeat) {
-                GameState.mustPass = true;       // “passar” este valor de dado
-                GameState.mode = "awaitRoll";    // volta ao estado de lançar
-
+            
+            // Se a lista de jogadas (cells) estiver vazia, significa que estamos bloqueados
+            if (cells.length === 0) {
+                
+                // Forçamos o estado "Tem de passar" localmente
+                GameState.mustPass = true; 
+                
                 const v = GameState.dice.value;
-                setMsg(
-                    `Saiu ${v}.\n` +
-                    `Não tens jogadas válidas.\n` +
-                    `Como saiu ${v} pode voltar a lançar os dados..`
-                );
+                const canRepeat = GameState.dice.canRepeat;
 
-                updateRollUI();   // aqui o botão fica visível e diz "Lançar Dados"
+                if (canRepeat) {
+                    // Se saiu 1, 4 ou 6, volta a lançar
+                    setMsg(`Saiu ${v}.\nNão tens jogadas válidas.\nComo saiu ${v} deves lançar de novo.`);
+                } else {
+                    // Se saiu 2 ou 3, tem de passar a vez
+                    setMsg(`Saiu ${v}.\nNão tens jogadas válidas.\nClique em 'Passar a vez'.`);
+                }
+
+                // Atualiza o botão para mostrar "Passar a vez" ou "Lançar Dados"
+                updateRollUI();
             }
-            return; // não mexemos no resto da lógica local
+            return; 
         }
 
         // Daqui para baixo fica só para modo LOCAL
@@ -1979,6 +2041,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // o dado antigo já não serve. APAGAR IMEDIATAMENTE.
         if (turnChanged || boardChanged) {
             GameState.dice = { sum: null, value: null, canRepeat: false };
+            GameState.mustPass = false; // <--- ADICIONA ESTA LINHA OBRIGATÓRIA
             clearHighlights();
         }
 
@@ -2091,73 +2154,52 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (GameState.isMyTurn) {
                     // Se é a minha vez e não tenho dados, tenho de lançar
                     setMsg("Clique em 'Lançar Dados'.");
-                } else {
-                    // Se não é a minha vez, espero
-                    setMsg("A aguardar jogada...");
                 }
             }
             updateRollUI();
         }
 
-        // 8. Vencedor
-        // CORREÇÃO: Verifica se é estritamente uma STRING não vazia. 
-        // Isto ignora objetos {}, arrays [], ou valores estranhos que o servidor possa enviar.
-        if (typeof state.winner === "string" && state.winner.trim() !== "") { 
-            
+        // ... dentro de handleServerUpdate ...
+
+        if ("winner" in state) {
             const winnerNick = state.winner;
-            
-            // Segurança extra: ignora se o servidor enviar a palavra "null" ou "undefined" como texto
-            if (winnerNick === "null" || winnerNick === "undefined") {
-                return; 
-            }
 
-            let msgText = "O jogo online foi cancelado.";
-            let winnerDisplay = winnerNick; 
-
-            // Tenta descobrir a cor do vencedor
-            const players = state.players || GameState.onlinePlayers || {};
-            
-            // 1. Tenta encontrar a cor pelo nome exato
-            let rawColor = players[winnerNick];
-
-            // 2. Se falhar, tenta encontrar ignorando maiúsculas/minúsculas
-            if (!rawColor) {
-                const foundKey = Object.keys(players).find(key => 
-                    key.trim().toLowerCase() === winnerNick.trim().toLowerCase()
-                );
-                if (foundKey) rawColor = players[foundKey];
-            }
-
-            // 3. Traduz a cor (Blue->Azul)
-            if (rawColor) {
-                const c = mapServerColor(rawColor);
-                if (c) winnerDisplay = c;
-            }
-
-            msgText = `Fim do jogo!\n${winnerDisplay} venceu!`;
-
-            if (GameState.playerSurrendered) {
-                msgText = `Desististe do jogo.\n${winnerDisplay} venceu.`;
-            }
-
-            toggleMsgPanel(true);
-
-            // Força a mensagem a aparecer
-            setMsg(msgText, { force: true });
-            
+            // Limpar o estado do jogo imediatamente
             stopUpdateListener();
             OnlineState.game = null;
             GameState.inGame = false;
             GameState.mode = "finished";
+
+            // CASO 1: Jogo Cancelado (Timeout)
+            if (winnerNick === null) {
+                setMsg("Tempo esgotado! O jogo foi cancelado.");
+            } 
+            // CASO 2: Alguém ganhou
+            else {
+                let winnerDisplay = winnerNick;
+                // (Lógica para mostrar nome bonito/cor mantém-se igual...)
+                const players = state.players || GameState.onlinePlayers;
+                if (players && players[winnerNick]) {
+                    // ... mapear cor ...
+                    if (players[winnerNick] === "Blue") winnerDisplay = "Azul";
+                    else if (players[winnerNick] === "Red") winnerDisplay = "Vermelho";
+                }
+                
+                setMsg(`Fim do jogo online!\n${winnerDisplay} ganhou!`, { force: true });
+            }
+
+            // --- CORREÇÃO: REMOVIDO O leaveGame() ---
+            // O jogo já acabou no servidor, não precisamos de enviar nada.
             
-            clearHighlights();
-            updateRollUI();
-            
+            if (typeof clearHighlights === "function") clearHighlights();
+            if (typeof updateRollUI === "function") updateRollUI();
+
             setTimeout(() => {
-                restartToModeSelection(); 
-                closeAllMenus();          
-                toggleMsgPanel(false);    
-            }, 4000);
+                restartToModeSelection();
+                closeAllMenus();
+                toggleMsgPanel(false);
+            }, 3000);
+
             return;
         }
 
