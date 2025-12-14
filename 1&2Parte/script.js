@@ -1,6 +1,7 @@
 window.SERVER_URL = localStorage.getItem("tw_server_url") || "http://twserver.alunos.dcc.fc.up.pt:8008";
 
 document.addEventListener("DOMContentLoaded", () => {
+    // Referências DOM
     const closedBox = document.getElementById("closedBox");
     const openWrap = document.getElementById("openWrap");
     const logo = document.getElementById("logo");
@@ -23,7 +24,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const loginForm = document.getElementById("loginForm");
     const usernameInput = document.getElementById("username");
     const passwordInput = document.getElementById("password");
-    const buttonEntrar = document.getElementById("buttonEntrar");
     const loggedMenu = document.getElementById("loggedMenu");
     const loggedUsername = document.getElementById("loggedUsername");
     const logoutButton = document.getElementById("logoutButton");
@@ -54,15 +54,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const regrasIcon = regrasButton.querySelector("img");
     const classIcon = classButton.querySelector("img");
 
-
-    // Abre a "caixa" inicial que contêm o jogo
+    // Inicialização da Interface 
     closedBox.addEventListener("click", () => {
         closedBox.classList.add("hidden");
         openWrap.classList.remove("hidden");
         logo.classList.remove("hidden");
     });
 
-    // Estado inicial para todos os menus 
     const closeAllMenus = () => {
         [loginMenu, loggedMenu, settingsMenu, regrasMenu, classMenu].forEach(menu => menu.classList.add("hidden"));
         loginIcon.src = "http://www.alunos.dcc.fc.up.pt/~up202207213/img/user_logo.png";
@@ -71,26 +69,13 @@ document.addEventListener("DOMContentLoaded", () => {
         classIcon.src = "http://www.alunos.dcc.fc.up.pt/~up202207213/img/classificacoes_logo.png";
     };
 
+    // Garante que painéis laterais cabem no ecrã
     function ensurePanelVisible(panel) {
         if (!panel) return;
-        
-        // 👇 1. Reset: Removemos o overlay para medir a posição "original" (lateral)
         panel.classList.remove("panel-overlay");
-
-        // 2. Mede no estado original
         const r = panel.getBoundingClientRect();
-        
-        // 3. Verifica se cabe no ecrã
-        const fits =
-            r.left >= 0 &&
-            r.right <= window.innerWidth &&
-            r.top >= 0 &&
-            r.bottom <= window.innerHeight;
-
-        // 4. Se NÃO couber, volta a adicionar o overlay
-        if (!fits) {
-            panel.classList.add("panel-overlay");
-        }
+        const fits = r.left >= 0 && r.right <= window.innerWidth && r.top >= 0 && r.bottom <= window.innerHeight;
+        if (!fits) panel.classList.add("panel-overlay");
     }
 
     window.addEventListener("resize", () => {
@@ -98,8 +83,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!classMenu.classList.contains("hidden"))  ensurePanelVisible(classMenu);
     });
 
-
-    // Menu Login
+    // Gestão de Login e Utilizador
     let isLoggedIn = false;
 
     userButton.addEventListener("click", () => {
@@ -124,35 +108,18 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-
-
-    function updateLoginButtonState() {
-        const hasNick = usernameInput.value.trim() !== "";
-        const hasPass = passwordInput.value.trim() !== "";
-    }
-
-    usernameInput.addEventListener("input", updateLoginButtonState);
-    passwordInput.addEventListener("input", updateLoginButtonState);
-
     loginForm.addEventListener("submit", async (ev) => {
         ev.preventDefault();
-
-        const usernameInput = document.getElementById("username");
-        const passwordInput = document.getElementById("password");
-
-        const nick = usernameInput.value;  
-        const pass = passwordInput.value; 
+        const nick = document.getElementById("username").value;  
+        const pass = document.getElementById("password").value; 
 
         try {
             await registerUser(nick, pass);
-
             isLoggedIn = true;
             loggedUsername.textContent = nick;
-
             loginMenu.classList.add("hidden");
             loggedMenu.classList.add("hidden");
             loginIcon.src = "http://www.alunos.dcc.fc.up.pt/~up202207213/img/user_logo.png";
-
             passwordInput.value = "";
         } catch (err) {
             let msg = err.message;
@@ -163,20 +130,17 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-
     logoutButton.addEventListener("click", () => {
         isLoggedIn = false;
         loggedUsername.textContent = "Username";
         restartToModeSelection();
         closeAllMenus();
-
         if (typeof stopUpdateListener === "function") {
             stopUpdateListener();
         }
     });
 
-
-    // Menu Confiurações
+    // Menus de Configurações e Classificações 
     settingsButton.addEventListener("click", () => {
         if (settingsMenu.classList.contains("hidden")) {
             closeAllMenus();
@@ -188,7 +152,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Menu Classificações
     classButton.addEventListener("click", () => {
         if (classMenu.classList.contains("hidden")) {
             closeAllMenus();
@@ -202,40 +165,31 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    // Alternar Ranking Local vs Online
     let currentRankingMode = "local"; 
 
     if (btnRankingLocal) {
         btnRankingLocal.addEventListener("click", () => {
             currentRankingMode = "local";
-            
             btnRankingLocal.classList.add("active");
             btnRankingOnline.classList.remove("active");
-            
-            // AGORA ESCONDEMOS A LINHA INTEIRA
             if (rankingSelectRow) rankingSelectRow.classList.add("hidden");
-            
             if (clearBtn) clearBtn.classList.remove("hidden");
             renderClassifications();
         });
     }
 
-    // Botão ONLINE
     if (btnRankingOnline) {
         btnRankingOnline.addEventListener("click", () => {
             currentRankingMode = "online";
-
             btnRankingOnline.classList.add("active");
             btnRankingLocal.classList.remove("active");
-
-            // AGORA MOSTRAMOS A LINHA INTEIRA
             if (rankingSelectRow) rankingSelectRow.classList.remove("hidden");
-            
             if (clearBtn) clearBtn.classList.add("hidden");
             renderClassifications();
         });
     }
 
-    // Quando muda o tamanho no select do ranking online
     if (rankingSizeSelect) {
         rankingSizeSelect.addEventListener("change", () => {
             if (currentRankingMode === "online") {
@@ -244,7 +198,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Menu Regras
+    // Menu de Regras
     regrasButton.addEventListener("click", () => {
         if (regrasMenu.classList.contains("hidden")) {
             closeAllMenus();
@@ -286,26 +240,20 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     })();
 
-    // Botão Voltar ao início (Dentro das Configurações)
+    // Botão Voltar ao Início (Configurações)
     if (voltarButton) {
         voltarButton.addEventListener("click", () => {
-            
-            // CASO A: Jogo a decorrer -> Comporta-se IGUAL ao desistir
             if (GameState.inGame) {
-                // Esconde o menu de settings para vermos o alerta e o jogo
                 if (settingsMenu) settingsMenu.classList.add("hidden");
-                
                 executarDesistencia();
-            } 
-            // CASO B: Apenas a navegar nos menus -> Volta ao ecrã inicial
-            else {
+            } else {
                 restartToModeSelection();
                 closeAllMenus();
             }
         });
     }
 
-    // Jogador vs Jogador
+    // Início de Jogo (Local vs Online)
     function iniciarJogoUI_vsJogador() {
         jogador.classList.add("hidden");
         ia.classList.add("hidden");
@@ -333,38 +281,32 @@ document.addEventListener("DOMContentLoaded", () => {
         closeAllMenus();
     }
 
+    // Join Jogo Online
     jogador.addEventListener("click", async () => {
         closeAllMenus();
-
         if (!isLoggedIn) {
             loginMenu.classList.remove("hidden");
             loginIcon.src = "http://www.alunos.dcc.fc.up.pt/~up202207213/img/user_logo_2.png";
-
-            alert("Tem de iniciar sessão para jogar online.");
+            alert("Tens de iniciar sessão para jogar online.");
             return;
         }
 
         const size = parseInt(sizeSelect.value, 10);
-
         GameState.myColor = null;
         GameState.opponentColor = null;
         GameState.isMyTurn = false;
         
         try {
             const gameId = await joinGame(size);
-        
             iniciarJogoUI_vsJogador();  
             startUpdateListener();
-
         } catch (err) {
             alert("Erro ao entrar em jogo online: " + err.message);
             console.error(err);
         }
-
     });
 
-
-    // Jogador vs IA
+    // Iniciar Jogo Local vs IA
     ia.addEventListener("click", () => {
         jogador.classList.add("hidden");
         ia.classList.add("hidden");
@@ -380,31 +322,24 @@ document.addEventListener("DOMContentLoaded", () => {
         GameState.currentPlayer = getFirstPlayer();
 
         toggleMsgPanel(true);
-
         renderBoard();
         updateRollUI();
         updateDesistirUI();
         closeAllMenus();
 
-
         if (GameState.currentPlayer === GameState.aiColorLabel) {
             setMsg("A IA vai lançar os dados...");
             scheduleAI(AI_DELAY.ROLL);
         } else {
-            setMsg('Clique em "Lançar Dados".');
+            setMsg('Clica em "Lançar Dados".');
         }
     });
 
-    // ... (código do Jogador vs IA acima) ...
-
-    // ---------------------------------------------------------
-    // 1. COLA AQUI A FUNÇÃO NOVA
-    // ---------------------------------------------------------
+    // Lógica de Desistência
     async function executarDesistencia() {
-        const confirma = confirm("Tem a certeza que quer desistir/sair do jogo?");
+        const confirma = confirm("Tens a certeza que queres desistir/sair do jogo?");
         if (!confirma) return;
 
-        // MODO ONLINE
         if (OnlineState.game) {
             try {
                 GameState.playerSurrendered = true; 
@@ -419,7 +354,6 @@ document.addEventListener("DOMContentLoaded", () => {
             return; 
         }
 
-        // MODO LOCAL
         closeAllMenus();
         const winnerColor = GameState.vsAI
             ? GameState.aiColorLabel
@@ -433,27 +367,19 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!classMenu.classList.contains("hidden")) renderClassifications();
         } catch (_) { }
 
-
         restartToModeSelection();
         if (desistirButton) desistirButton.classList.add("hidden");
         const dadosWrap = document.getElementById("dadosWrap");
         if (dadosWrap) dadosWrap.classList.add("hidden");
         updateDesistirUI();
-
     }
 
-    // ---------------------------------------------------------
-    // 2. ATUALIZA O LISTENER DO BOTÃO DESISTIR (logo abaixo)
-    // ---------------------------------------------------------
-    
-    // Botão Desistir - atribui vencedor, guarda classificação e recomeça
-    desistirButton.addEventListener("click", () => { // <--- O teu código antigo começava aqui
+    desistirButton.addEventListener("click", () => {
         if (!GameState.inGame) return;
-        executarDesistencia(); // Agora só chama a função
+        executarDesistencia();
     });
 
-
-    // Animação Dados
+    // Animação dos Dados
     function baralharDados() {
         document.querySelectorAll(".dado").forEach(dado => {
             const cima = Math.random() < 0.5;
@@ -462,7 +388,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Reset Dados
     function resetDiceVisual() {
         document.querySelectorAll(".dado").forEach(d => {
             d.classList.remove("up");
@@ -479,8 +404,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-
-    // Mensagens 
+    // Painel de Mensagens
     let statusEl = document.querySelector(".statusMsg");
     if (!statusEl) {
         let panel = document.querySelector(".msgPanel");
@@ -489,7 +413,6 @@ document.addEventListener("DOMContentLoaded", () => {
             panel.classList.add("msgPanel");
             document.body.appendChild(panel);
         }
-
         statusEl = document.createElement("div");
         statusEl.classList.add("statusMsg");
         panel.appendChild(statusEl);
@@ -499,35 +422,17 @@ document.addEventListener("DOMContentLoaded", () => {
     function setMsg(t, { force = false } = {}) {
         const msgEl = document.querySelector(".statusMsg");
         if (!msgEl) return;
-        
-        // Se o jogo não está a decorrer e não é mensagem forçada, limpa
         if (!GameState.inGame && !force) {
             msgEl.textContent = "";
             return;
         }
-        
         if (!t) return;
-
         let header = "";
-
-
-        // 2. MODO IA
         if (GameState.vsAI) {
             const isAIturn = GameState.currentPlayer === GameState.aiColorLabel;
-            header = isAIturn ? "É a vez da IA jogar.\n" : "É a sua vez de jogar.\n";
+            header = isAIturn ? "É a vez da IA jogar.\n" : "É a tua vez de jogar.\n";
         } 
-
         msgEl.textContent = `${header}${t}`;
-    }
-
-    function setMsgTemp(texto, ms = 2000, { force = true } = {}) {
-        toggleMsgPanel(true);
-        setMsg(texto, { force });
-        clearTimeout(setMsgTemp._timer);
-        setMsgTemp._timer = setTimeout(() => {
-            setMsg("", { force: true });
-            toggleMsgPanel(false);
-        }, ms);
     }
 
     function toggleMsgPanel(show) {
@@ -536,7 +441,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function announceAwaitRoll(playerLabel = GameState.currentPlayer) {
         const isAI = GameState.vsAI && playerLabel === GameState.aiColorLabel;
-        const body = isAI ? "A IA vai lançar os dados..." : "Clique em \"Lançar Dados\".";
+        const body = isAI ? "A IA vai lançar os dados..." : "Clica em \"Lançar Dados\".";
         setMsg(body);
     }
 
@@ -544,10 +449,9 @@ document.addEventListener("DOMContentLoaded", () => {
         document.querySelectorAll(".tabuleiro div.hl").forEach(el => el.classList.remove("hl"));
     }
 
-    // Constantes para os estados de progresso das peças
+    // Estado do Jogo (Game State)
     const STAGE = { NOT_MOVED: 0, MOVED_NOT_LAST: 1, HAS_BEEN_LAST: 2 };
 
-    // Estado global do jogo
     const GameState = {
         mode: "awaitRoll",
         currentPlayer: "Azul",
@@ -565,7 +469,6 @@ document.addEventListener("DOMContentLoaded", () => {
         aiTimer: null,
         isRolling: false,
         stats: { startTime: null, moves: 0 },
-
         myColor: null, 
         opponentColor: null,
         isMyTurn: false
@@ -573,70 +476,39 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const OnlineState = window.OnlineState;
 
-
+    // Helpers de Servidor e Jogadores
     function normalizePlayers(players, myNick, turnNick) {
         let myColorServer = null;
         let oppColorServer = null;
         let turnColorServer = null;
 
-        if (!players) {
-            return { myColorServer, oppColorServer, turnColorServer };
-        }
+        if (!players) return { myColorServer, oppColorServer, turnColorServer };
 
-        if (players[myNick] != null) {
-            myColorServer = players[myNick];
-        }
-        if (turnNick && players[turnNick] != null) {
-            turnColorServer = players[turnNick];
-        }
+        if (players[myNick] != null) myColorServer = players[myNick];
+        if (turnNick && players[turnNick] != null) turnColorServer = players[turnNick];
     
-        if (!myColorServer) {
-            if (blueNick && myNick && blueNick.trim().toLowerCase() === myNick.trim().toLowerCase()) {
-                myColorServer = "Blue";
-            } 
-            else if (redNick && myNick && redNick.trim().toLowerCase() === myNick.trim().toLowerCase()) {
-                myColorServer = "Red";
-            }
-        }
-
         if (myColorServer) {
-            oppColorServer = (myColorServer === "Blue" || myColorServer === 1 || myColorServer === "1")
-                ? "Red"
-                : "Blue";
+            oppColorServer = (myColorServer === "Blue" || myColorServer === 1 || myColorServer === "1") ? "Red" : "Blue";
         }
 
         return { myColorServer, oppColorServer, turnColorServer };
     }
 
-
     function applyOnlineTurnInfoFromState(state) {
         if (!OnlineState.game || !state.players) return;
-
         const myNick = OnlineState.nick;
-        
-        // Tenta encontrar o turno em qualquer lado possível
         let turnNick = state.turn || (state.dice && state.dice.turn) || null;
 
-        // SE O SERVIDOR NÃO MANDOU TURNO (ex: num notify intermédio),
-        // mantemos o isMyTurn como estava, em vez de definir como false!
         if (turnNick) {
              if (myNick) {
                  GameState.isMyTurn = (turnNick.trim().toLowerCase() === myNick.trim().toLowerCase());
              }
-        } else {
-            // Se turnNick é null, NÃO alteramos o GameState.isMyTurn.
-            // Mantemos o estado anterior.
         }
         
-        // Se ainda não temos turnNick para normalizar cores, tentamos usar o último conhecido
-        if (!turnNick && GameState.lastTurnNick) {
-            turnNick = GameState.lastTurnNick;
-        }
+        if (!turnNick && GameState.lastTurnNick) turnNick = GameState.lastTurnNick;
 
-        const { myColorServer, oppColorServer, turnColorServer } =
-            normalizePlayers(state.players, myNick, turnNick);
+        const { myColorServer, oppColorServer, turnColorServer } = normalizePlayers(state.players, myNick, turnNick);
 
-        // ... (resto da função de cores mantém-se igual)
         if (myColorServer != null) {
             const myColor = mapServerColor(myColorServer);
             if (myColor) {
@@ -650,7 +522,6 @@ document.addEventListener("DOMContentLoaded", () => {
             const turnColor = mapServerColor(turnColorServer);
             if (turnColor) {
                 GameState.currentPlayer = turnColor;
-                // Rede de segurança extra baseada na cor
                 if (GameState.myColor && GameState.currentPlayer === GameState.myColor) {
                     GameState.isMyTurn = true;
                 }
@@ -658,13 +529,12 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // Definição do Vencedor conforme a cor
     function winnerLabelForDisplay(winnerColor) {
         if (!GameState.vsAI) return winnerColor;
         return (winnerColor === GameState.aiColorLabel) ? "IA" : "Jogador";
     }
 
-    // Helper para agendar a próxima ação da IA com delay controlado
+    // Helpers IA
     function scheduleAI(ms) {
         if (!GameState.vsAI) return;
         if (GameState.aiTimer) clearTimeout(GameState.aiTimer);
@@ -677,44 +547,25 @@ document.addEventListener("DOMContentLoaded", () => {
     // Classificações
     function saveClassification(nivelAI, vencedorDisplay) {
         const classificacoes = JSON.parse(localStorage.getItem("classificacoes")) || [];
-
-        const data = new Date()
-            .toLocaleString("pt-PT", { hour12: false })
-            .replace(",", "");
-
+        const data = new Date().toLocaleString("pt-PT", { hour12: false }).replace(",", "");
         classificacoes.push({ data, nivelAI, vencedor: vencedorDisplay });
-
         const limit = 8;
         const classificacoesLimitadas = classificacoes.slice(-limit);
-
         localStorage.setItem("classificacoes", JSON.stringify(classificacoesLimitadas));
         renderClassifications();
     }
 
-
     async function renderClassifications() {
         const tbody = document.getElementById("classTbody");
         const theadRow = document.querySelector("#table-class thead tr");
-        
         if (!tbody || !theadRow) return;
 
         tbody.innerHTML = ""; 
 
-        // =================================================
-        //                 MODO ONLINE
-        // =================================================
         if (currentRankingMode === "online") {
-            theadRow.innerHTML = `
-                <th>Jogador</th>
-                <th>Vitórias</th>
-                <th>Jogos</th>
-            `;
-
+            theadRow.innerHTML = `<th>Jogador</th><th>Vitórias</th><th>Jogos</th>`;
             tbody.innerHTML = `<tr><td colspan="3">A carregar...</td></tr>`;
-
             const size = parseInt(document.getElementById("rankingSizeSelect").value, 10);
-            
-            // O grupo tem de ser o mesmo que usas no servidor
             const group = 9; 
 
             try {
@@ -725,7 +576,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
 
                 const data = await response.json();
-
                 tbody.innerHTML = ""; 
 
                 if (data.error) {
@@ -739,16 +589,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     return;
                 }
 
-                // Ordenar por vitórias
                 lista.sort((a, b) => b.victories - a.victories);
-
                 lista.forEach(player => {
                     const tr = document.createElement("tr");
-                    tr.innerHTML = `
-                        <td>${player.nick}</td>
-                        <td>${player.victories}</td>
-                        <td>${player.games}</td>
-                    `;
+                    tr.innerHTML = `<td>${player.nick}</td><td>${player.victories}</td><td>${player.games}</td>`;
                     tbody.appendChild(tr);
                 });
 
@@ -756,41 +600,24 @@ document.addEventListener("DOMContentLoaded", () => {
                 console.error(err);
                 tbody.innerHTML = `<tr><td colspan="3">Erro de conexão.</td></tr>`;
             }
-        } 
-        
-        // =================================================
-        //                 MODO LOCAL
-        // =================================================
-        else {
-            theadRow.innerHTML = `
-                <th>Data</th>
-                <th>Nível AI</th>
-                <th>Vencedor</th>
-            `;
-
+        } else {
+            theadRow.innerHTML = `<th>Data</th><th>Nível AI</th><th>Vencedor</th>`;
             const list = JSON.parse(localStorage.getItem("classificacoes")) || [];
-            
             if (list.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="3">Sem jogos guardados localmente.</td></tr>`;
                 if (typeof clearBtn !== 'undefined' && clearBtn) clearBtn.disabled = true;
                 return;
             }
-
             if (typeof clearBtn !== 'undefined' && clearBtn) clearBtn.disabled = false;
-
             [...list].reverse().forEach(({ data, nivelAI, vencedor }) => {
                 const tr = document.createElement("tr");
-                tr.innerHTML = `
-                    <td>${data}</td>
-                    <td>${nivelAI}</td>
-                    <td>${vencedor}</td>
-                `;
+                tr.innerHTML = `<td>${data}</td><td>${nivelAI}</td><td>${vencedor}</td>`;
                 tbody.appendChild(tr);
             });
         }
     }
 
-    // Restart do jogo
+    // Reset e Configurações de Jogo
     function restartToModeSelection() {
         jogador.classList.remove("hidden");
         ia.classList.remove("hidden");
@@ -810,7 +637,6 @@ document.addEventListener("DOMContentLoaded", () => {
         GameState.stats.startTime = null;
         GameState.stats.moves = 0;
 
-        // 👇 LIMPAR ESTADO ONLINE
         GameState.myColor = null;
         GameState.opponentColor = null;
         GameState.isMyTurn = false;
@@ -822,9 +648,6 @@ document.addEventListener("DOMContentLoaded", () => {
         updateRollUI();
     }
 
-
-    // Menu Configurações 
-    // Nível IA
     const nivelAISelect = document.querySelector(".nivelAI");
     if (nivelAISelect) {
         GameState.aiDifficulty = nivelAISelect.value || "Fácil";
@@ -833,7 +656,7 @@ document.addEventListener("DOMContentLoaded", () => {
             setMsg(`Nível da IA: ${GameState.aiDifficulty}`);
         });
     }
-    // 1º Jogador
+
     const firstPlayerSelect = document.querySelector(".first-player");
     function getFirstPlayer() {
         return (firstPlayerSelect?.value === "Vermelho") ? "Vermelho" : "Azul";
@@ -853,9 +676,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Delays da IA
     const AI_DELAY = { ROLL: 1800, PICK: 3500, BRANCH: 2200, CHAIN: 1800 };
 
+    // Lógica de Visualização e Coordenadas
     function fromView(vr, vc, player) {
         if (player === "Azul") return { r: vr, c: vc };
         return { r: GameState.rows - 1 - vr, c: GameState.cols - 1 - vc };
@@ -866,57 +689,39 @@ document.addEventListener("DOMContentLoaded", () => {
         return { vr: GameState.rows - 1 - r, vc: GameState.cols - 1 - c };
     }
 
-
     function getPerspectivePlayer() {
         if (OnlineState && OnlineState.game && GameState.myColor) {
             return GameState.myColor;
         }
-        return "Azul";   // fallback quando não temos cor
+        return "Azul";   
     }
-
 
     function cellIndexToRC(cell) {
         const cols = GameState.cols;
-        const rows = GameState.rows; // 4
-
-        const rowFromBottom = Math.floor(cell / cols); // 0 = linha de baixo
-        const posInRow     = cell % cols;              // posição ao longo do caminho
-
-        // linha do tabuleiro (0 = topo, 3 = baixo)
+        const rows = GameState.rows; 
+        const rowFromBottom = Math.floor(cell / cols); 
+        const posInRow     = cell % cols;              
         const r = rows - 1 - rowFromBottom;
-
-        // direção nessa linha (já usas isto na lógica local)
-        const dir = dirForRow(r); // +1 (esq->dir) ou -1 (dir->esq)
-
+        const dir = dirForRow(r); 
         let c;
         if (dir === +1) {
-            // linha que anda da esquerda para a direita
             c = posInRow;
         } else {
-            // linha que anda da direita para a esquerda
             c = cols - 1 - posInRow;
         }
-
         return { r, c };
     }
 
     function rcToCellIndex(r, c) {
         const cols = GameState.cols;
-        const rows = GameState.rows; // 4
-
-        // converter linha do tabuleiro para "linha a partir de baixo"
+        const rows = GameState.rows; 
         const rowFromBottom = rows - 1 - r;
-
-        const dir = dirForRow(r); // +1 (esq->dir) ou -1 (dir->esq)
-
-        // posição ao longo do caminho nessa linha
-        const posInRow = (dir === +1)
-            ? c                // esq->dir
-            : (cols - 1 - c);  // dir->esq
-
+        const dir = dirForRow(r); 
+        const posInRow = (dir === +1) ? c : (cols - 1 - c);
         return rowFromBottom * cols + posInRow;
     }
 
+    // Gestão dos Botões de Jogo
     function updateRollUI() {
         const btn = document.getElementById("baralharDados");
         const dadosWrap = document.getElementById("dadosWrap");
@@ -924,8 +729,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (!btn) return;
 
-        // 🟢 1. PRIORIDADE MÁXIMA: Se o jogo acabou, mostra o botão "Jogar de novo"
-        // (Fazemos isto ANTES de verificar !inGame, porque quando acaba, inGame passa a false)
         if (GameState.mode === "finished") {
             if (dadosWrap) dadosWrap.classList.remove("hidden");
             btn.style.display = "inline-block";
@@ -933,14 +736,12 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        // 🟢 2. Se o jogo não está a decorrer (e não está finished), esconde tudo
         if (!GameState.inGame) {
             if (dadosWrap) dadosWrap.classList.add("hidden");
             btn.style.display = "none";
             return;
         }
 
-        // Se for turno da IA (modo local), esconde
         const aiTurn = GameState.vsAI && GameState.currentPlayer === GameState.aiColorLabel;
         if (aiTurn) {
             btn.style.display = "none";
@@ -949,17 +750,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const isOnline = !!OnlineState.game;
 
-        // ===============================================
-        //           MODO ONLINE SIMPLIFICADO
-        // ===============================================
         if (isOnline) {
             if (dadosWrap) dadosWrap.classList.remove("hidden");
             btn.style.display = "inline-block";
 
-            // 🟢 CORREÇÃO: Usar apenas truthiness (removemos o "=== true")
-            // E adicionamos a verificação das Cores como fallback extra aqui também
             let myTurn = !!GameState.isMyTurn;
-            
             if (!myTurn && GameState.myColor && GameState.currentPlayer) {
                  if (GameState.myColor === GameState.currentPlayer) myTurn = true;
             }
@@ -977,9 +772,6 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        // ===============================================
-        //                MODO LOCAL
-        // ===============================================
         if (GameState.mustPass) {
             if (dadosWrap) dadosWrap.classList.remove("hidden");
             btn.style.display = "inline-block";
@@ -1002,47 +794,33 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function mapServerColor(c) {
-        // Servidor pode mandar "Blue"/"Red", ou 1/2, ou "1"/"2"
         if (c === "Blue" || c === 1 || c === "1") return "Azul";
         if (c === "Red"  || c === 2 || c === "2") return "Vermelho";
-
-        // No pior caso, se for "Azul"/"Vermelho" já normalizado, devolve tal e qual
         if (c === "Azul" || c === "Vermelho") return c;
-
         return null;
     }
 
-
-    // Atualiza botão de desistir
-    // [script.js] - Substituir a função updateDesistirUI completa
-
     function updateDesistirUI() {
         if (!desistirButton) return;
-
         let shouldShow = false;
 
-        // Só mostramos o botão se o jogo estiver a decorrer e não tiver acabado
         if (GameState.inGame && GameState.mode !== "finished") {
-            
             if (OnlineState.game) {
-                // MODO ONLINE: Só aparece se for a minha vez
                 shouldShow = GameState.isMyTurn;
             } else {
                 shouldShow = isHumanTurnNow();
             }
         }
 
-        // Aplica a visibilidade
         const hide = !shouldShow;
         desistirButton.classList.toggle("hidden", hide);
         desistirButton.disabled = hide;
     }
 
-    // Regras Tabuleiro
+    // Lógica do Tabuleiro e Peças
     function dirForRow(r) { return (r === 3 || r === 1) ? +1 : -1; }
     function initialRow(owner) { return owner === "A" ? 3 : 0; }
 
-    // Validação
     function isFrontOfStartRow(r, c) {
         const cell = GameState.board[r][c];
         if (!cell) return false;
@@ -1069,7 +847,6 @@ document.addEventListener("DOMContentLoaded", () => {
         return document.querySelector(`.tabuleiro div[data-vr="${vr}"][data-vc="${vc}"]`);
     }
 
-    // Iniciaçização Tabuleiro
     function initBoardState(cols) {
         GameState.cols = cols;
         GameState.board = Array.from({ length: GameState.rows }, (_, r) =>
@@ -1108,7 +885,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // Reinicia o Tabuleiro para o número de colunas scolhido pelo utilizador
     function resetAndRender(cols) {
         initBoardState(cols);
         renderBoard();
@@ -1137,8 +913,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // Dados
-    // qual o valor? e que regras implica?
+    // Lógica dos Dados
     function lerLancamentoPaus() {
         const claros = Array.from(document.querySelectorAll(".dado"))
             .reduce((acc, d) => acc + (d.classList.contains("up") ? 1 : 0), 0);
@@ -1146,28 +921,27 @@ document.addEventListener("DOMContentLoaded", () => {
         const canRepeat = (value === 1 || value === 4 || value === 6);
         return { sum: claros, value, canRepeat };
     }
-    // botão
 
     function applyRollResult(d) {
         GameState.dice = d;
         GameState.mode = "awaitPiece";
         GameState.selected = null;
-
         let msg = `Saiu ${d.value}.\n`;
-
-        msg += (GameState.vsAI && GameState.currentPlayer === GameState.aiColorLabel)
+        const isAI = (GameState.vsAI && GameState.currentPlayer === GameState.aiColorLabel);
+        msg += isAI
             ? "A IA vai escolher uma peça para jogar."
-            : "Escolha uma peça para jogar.";
-
-        if (d.canRepeat) msg += `\nComo saiu ${d.value} pode voltar a lançar os dados.\n`;
-
+            : "Escolhe uma peça para jogar.";
+        if (d.canRepeat) {
+            msg += isAI
+                ? `\nComo saiu ${d.value} a IA volta a lançar os dados.\n`
+                : `\nComo saiu ${d.value} podes voltar a lançar os dados.\n`;
+        }
         setMsg(msg);
         clearHighlights();
         updateRollUI();
         if (!isAITurnNow()) {
             highlightMoveablePieces();
         }
-
         GameState.isRolling = false;
         scheduleAI(AI_DELAY.PICK);
     }
@@ -1177,78 +951,44 @@ document.addEventListener("DOMContentLoaded", () => {
     if (btnDados) {
         btnDados.addEventListener("click", () => {
             closeAllMenus();
-            
-            // Se o jogo acabou, o botão serve para reiniciar
             if (GameState.mode === "finished") {
                 restartToModeSelection();
                 return;
             }
-            
-            // Evitar cliques duplos enquanto processa
             if (GameState.isRolling) return;
 
-            // =====================================================
-            //                  MODO ONLINE
-            // =====================================================
+            // Lançamento Online
             if (OnlineState.game) {
-
-
-                // 2. Verificar o estado do jogo
-
-                // CASO B: Tenho de passar a vez (mustPass) e NÃO posso repetir
-                // O botão deve funcionar como "Passar"
                 if (GameState.mustPass && !GameState.dice?.canRepeat) {
                     const btn = document.getElementById("baralharDados");
                     if (btn) btn.disabled = true;
-
                     passGame()
-                        .then(() => {
-                            // Sucesso, aguarda update do servidor
-                        })
+                        .then(() => {})
                         .catch(err => {
                             alert(err.message || "Erro ao passar a vez online.");
                             if (btn) btn.disabled = false;
                         });
                     return;
                 }
-
-                // CASO C: Lançar Dados (awaitRoll ou repetição)
-                // Se chegámos aqui, vamos tentar lançar.
                 GameState.isRolling = true;
                 const btn = document.getElementById("baralharDados");
                 if (btn) btn.disabled = true;
-
                 rollGame()
-                    .then(() => {
-                        // Sucesso, o resultado vem no handleServerUpdate
-                    })
+                    .then(() => {})
                     .catch(err => {
                         let msg = err.message || "Erro ao lançar dados online.";
-
-                        if (msg.includes("You already rolled the dice")) {
-                            msg = "Já lançaste os dados e tens jogadas válidas.";
-                        } 
-                        else if (msg.includes("Not your turn to play")) {
-                            msg = "Não é a tua vez de jogar.";
-                        }
-                        else if (msg.includes("Wait for dice roll")) {
-                            msg = "Tens de lançar os dados primeiro.";
-                        }
-
+                        if (msg.includes("You already rolled the dice")) msg = "Já lançaste os dados e tens jogadas válidas.";
+                        else if (msg.includes("Not your turn to play")) msg = "Não é a tua vez de jogar.";
+                        else if (msg.includes("Wait for dice roll")) msg = "Tens de lançar os dados primeiro.";
                         setMsg("");
                         alert(msg);
-                                                
                         GameState.isRolling = false;
                         if (btn) btn.disabled = false;
                     });
-
                 return; 
             }
 
-
-            // =====================================================
-            //           MODO LOCAL (IA) - Mantém-se igual
-            // =====================================================
+            // Lançamento Local
             if (GameState.mode === "awaitRoll" && GameState.mustPass) {
                 GameState.mustPass = false;
                 GameState.currentPlayer = GameState.nextPlayer || GameState.currentPlayer;
@@ -1259,17 +999,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
             
-            // Só deixa lançar localmente se estiver em awaitRoll
             if (GameState.mode !== "awaitRoll") return;
-
             GameState.isRolling = true;
-
             const SPINS = 8;
             const STEP = 60;
             for (let i = 0; i < SPINS; i++) {
                 setTimeout(baralharDados, i * STEP);
             }
-
             setTimeout(() => {
                 const d = lerLancamentoPaus();
                 applyRollResult(d);
@@ -1277,6 +1013,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Validação de Movimentos (Local)
     function meOwner(label) { return label === "Azul" ? "A" : "V"; }
     function onFourthRow(r, owner) { return (owner === "A" && r === 0) || (owner === "V" && r === 3); }
     function hasOwnInInitialRow(owner) {
@@ -1285,29 +1022,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function isOwnPiece(r, c, cellIndexForOnline) {
-        // Obter a peça do tabuleiro (que já está sincronizado com o servidor)
         const piece = GameState.board[r][c];
-        
-        // Se a casa está vazia, não é minha
         if (!piece) return false;
-
-        // MODO ONLINE
         if (OnlineState && OnlineState.game) {
-            // Se ainda não sei a minha cor, não posso assumir que é minha
             if (!GameState.myColor) return false;
-            
-            // Converter "Azul"/"Vermelho" para "A"/"V"
             const me = (GameState.myColor === "Azul" ? "A" : "V");
             return piece.owner === me;
         }
-
-        // MODO LOCAL
         const label = GameState.currentPlayer;
         const me = meOwner(label);
         return piece.owner === me;
     }
-
-
 
     function canLand(r, c) {
         const me = meOwner(GameState.currentPlayer);
@@ -1315,8 +1040,6 @@ document.addEventListener("DOMContentLoaded", () => {
         return !v || v.owner !== me;
     }
 
-    // Jogo
-    // Cálculo do destino das peças 
     function possibleAdvanceFrom(r, c, steps) {
         const piece = GameState.board[r][c];
         if (!piece) return { r: null, c: null, needsChoice: false };
@@ -1342,13 +1065,10 @@ document.addEventListener("DOMContentLoaded", () => {
             return { r: null, c: null, needsChoice: false };
         }
 
-        // Azul bifurca ao sair da linha absoluta 1 (para 0 ou 2)
-        // Vermelho bifurca ao sair da linha absoluta 2 (para 3 ou 1)
         let curR = r, curC = c, rem = steps;
 
         while (rem > 0) {
             const d = dirForRow(curR);
-
             if (d === +1 && curC < GameState.cols - 1) { curC++; rem--; continue; }
             if (d === -1 && curC > 0) { curC--; rem--; continue; }
 
@@ -1392,7 +1112,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
             }
         }
-
         return { r: curR, c: curC, needsChoice: false };
     }
 
@@ -1405,7 +1124,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return { row: rowNum, col: colLabel };
     }
 
-
+    // Execução de Movimentos (Local)
     function applyMove(from, to) {
         const me = meOwner(GameState.currentPlayer);
         const piece = GameState.board[from.r][from.c];
@@ -1422,7 +1141,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         renderBoard();
         GameState.stats.moves += 1;
-
         const a = displayCoords(from.r, from.c);
         const b = displayCoords(to.r, to.c);
         setMsg(`Movimento: (${a.row},${a.col}) ➜ (${b.row},${b.col}).`);
@@ -1439,22 +1157,17 @@ document.addEventListener("DOMContentLoaded", () => {
         return n;
     }
 
-    // Fim do jogo
     function checkWin() {
         const a = countPieces("A");
         const v = countPieces("V");
 
         if (a === 0 || v === 0) {
             const winnerColor = a > 0 ? "Azul" : "Vermelho";
-
             const winnerDisplay = winnerLabelForDisplay(winnerColor);
-
             setMsg(`Fim do jogo!\n${winnerDisplay} ganhou!`);
-
             GameState.mode = "finished";
             clearHighlights();
             GameState.dice = { sum: null, value: null, canRepeat: false };
-
             updateRollUI();
             updateDesistirUI();
 
@@ -1462,8 +1175,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const nivel = GameState.aiDifficulty || "Fácil";
                 saveClassification(nivel, winnerDisplay);
                 if (!classMenu.classList.contains("hidden")) renderClassifications();
-            } catch (_) { /* silencioso */ }
-
+            } catch (_) { }
             return true;
         }
         return false;
@@ -1472,7 +1184,6 @@ document.addEventListener("DOMContentLoaded", () => {
     function endTurnOrRepeat() {
         const repeated = GameState.dice.canRepeat;
         GameState.dice = { sum: null, value: null, canRepeat: false };
-
         if (repeated) {
             GameState.mode = "awaitRoll";
             announceAwaitRoll(GameState.currentPlayer);
@@ -1483,13 +1194,10 @@ document.addEventListener("DOMContentLoaded", () => {
             announceAwaitRoll(GameState.currentPlayer);
             renderBoard();
         }
-
         updateRollUI();
         scheduleAI(AI_DELAY.CHAIN);
-
     }
 
-    // Destaca peças com jogadas possíveis
     function highlightCells(modelCells) {
         clearHighlights();
         const persp = getPerspectivePlayer();
@@ -1507,12 +1215,9 @@ document.addEventListener("DOMContentLoaded", () => {
             for (let c = 0; c < GameState.cols; c++) {
                 const v = GameState.board[r][c];
                 if (!v || v.owner !== me) continue;
-
                 if (onFourthRow(r, v.owner) && hasOwnInInitialRow(v.owner)) continue;
-
                 if (v.stage === STAGE.NOT_MOVED && !isFrontOfStartRow(r, c)) continue;
                 if (v.stage === STAGE.NOT_MOVED && GameState.dice.value !== 1) continue;
-
                 const dest = possibleAdvanceFrom(r, c, GameState.dice.value);
                 if (dest.needsChoice || (dest.r != null && canLand(dest.r, dest.c))) {
                     cells.push({ r, c });
@@ -1521,75 +1226,46 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         highlightCells(cells);
 
-        // 👉 MODO ONLINE (CORRIGIDO)
         if (OnlineState.game) {
-            
-            // Se a lista de jogadas (cells) estiver vazia, significa que estamos bloqueados
             if (cells.length === 0) {
-                
-                // Forçamos o estado "Tem de passar" localmente
                 GameState.mustPass = true; 
-                
                 const v = GameState.dice.value;
                 const canRepeat = GameState.dice.canRepeat;
-
                 if (canRepeat) {
-                    // Se saiu 1, 4 ou 6, volta a lançar
                     setMsg(`Saiu ${v}.\nNão tens jogadas válidas.\nComo saiu ${v} deves lançar de novo.`);
                 } else {
-                    // Se saiu 2 ou 3, tem de passar a vez
-                    setMsg(`Saiu ${v}.\nNão tens jogadas válidas.\nClique em 'Passar a vez'.`);
+                    setMsg(`Saiu ${v}.\nNão tens jogadas válidas.\nClica em 'Passar a vez'.`);
                 }
-
-                // Atualiza o botão para mostrar "Passar a vez" ou "Lançar Dados"
                 updateRollUI();
             }
             return; 
         }
 
-        // Daqui para baixo fica só para modo LOCAL
         if (cells.length === 0) {
             GameState.mustPass = true;
-
             const isAI = GameState.vsAI && GameState.currentPlayer === GameState.aiColorLabel;
             const v = GameState.dice.value;
-
             if (GameState.dice.canRepeat) {
                 GameState.nextPlayer = GameState.currentPlayer;
-                setMsg(
-                    `Saiu ${v}.\n` +
-                    `Não é uma jogada válida.\n` +
-                    `Como saiu ${v}, ${isAI ? "a IA" : "lança"} de novo o dado.`
-                );
+                setMsg(`Saiu ${v}.\nNão é uma jogada válida.\nComo saiu ${v}, ${isAI ? "a IA" : "lança"} de novo o dado.`);
             } else {
                 GameState.nextPlayer = (GameState.currentPlayer === "Azul") ? "Vermelho" : "Azul";
-                setMsg(
-                    `Saiu ${v}.\n` +
-                    `Não é uma jogada válida.\n` +
-                    `${isAI ? "A IA passa a vez." : "Clique em 'Passar a vez'."}`
-                );
+                setMsg(`Saiu ${v}.\nNão é uma jogada válida.\n${isAI ? "A IA passa a vez." : "Clica em 'Passar a vez'."}`);
             }
-
             GameState.mode = "awaitRoll";
             GameState.dice = { sum: null, value: null, canRepeat: false };
             clearHighlights();
             renderBoard();
             updateRollUI();
-
             if (isAI) {
-                if (GameState.nextPlayer === GameState.currentPlayer) {
-                    scheduleAI(AI_DELAY.ROLL);
-                } else {
-                    scheduleAI(AI_DELAY.CHAIN);
-                }
+                if (GameState.nextPlayer === GameState.currentPlayer) scheduleAI(AI_DELAY.ROLL);
+                else scheduleAI(AI_DELAY.CHAIN);
             }
             return;
         }
     }
 
-
-    // IA 
-    // Heurística de progresso para a IA 
+    // IA (Heurísticas e Decisão)
     function progressHeuristic(ownerChar, from, to) {
         const rowScore = ownerChar === "A" ? (3 - to.r) : (to.r - 0);
         const d = dirForRow(from.r);
@@ -1598,7 +1274,6 @@ document.addEventListener("DOMContentLoaded", () => {
         return rowScore * 100 + horizGain * 5 + branchBonus;
     }
 
-    // Geração de jogadas
     function enumerateMovesFrom(r, c, steps, playerLabel) {
         const piece = GameState.board[r][c];
         const moves = [];
@@ -1611,10 +1286,8 @@ document.addEventListener("DOMContentLoaded", () => {
         if (piece.stage === STAGE.NOT_MOVED) {
             if (!isFrontOfStartRow(r, c)) return moves;
             if (steps !== 1) return moves;
-
             const d = dirForRow(r);
             const nc = c + d;
-
             if (nc >= 0 && nc < GameState.cols && canLand(r, nc)) {
                 const cap = !!(GameState.board[r][nc] && GameState.board[r][nc].owner !== me);
                 moves.push({ from: { r, c }, to: { r, c: nc }, capture: cap, progress: progressHeuristic(me, { r, c }, { r, c: nc }) });
@@ -1664,22 +1337,16 @@ document.addEventListener("DOMContentLoaded", () => {
         return out;
     }
 
-    // Nível Fácil: evita capturar
-    // Nível Médio: aleatório
-    // Nível Difícil: captura primeiro, senão escolhe a jogada com maior progresso 
     function aiPickMove(moves, difficulty) {
         if (!moves.length) return null;
-
         if (difficulty === "Fácil") {
             const naoCapturas = moves.filter(m => !m.capture);
             const pool = naoCapturas.length ? naoCapturas : moves;
             return pool[Math.floor(Math.random() * pool.length)];
         }
-
         if (difficulty === "Médio") {
             return moves[Math.floor(Math.random() * moves.length)];
         }
-
         const caps = moves.filter(m => m.capture);
         if (caps.length) {
             caps.sort((a, b) => (b.progress ?? 0) - (a.progress ?? 0));
@@ -1694,18 +1361,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function isHumanTurnNow() {
-        return GameState.inGame &&
-            (!GameState.vsAI || GameState.currentPlayer !== GameState.aiColorLabel);
+        return GameState.inGame && (!GameState.vsAI || GameState.currentPlayer !== GameState.aiColorLabel);
     }
 
-    // Executa ação da IA 
     function aiMaybeAct() {
         if (!isAITurnNow()) return;
-
-        if (GameState.isRolling) {
-            scheduleAI(300);
-            return;
-        }
+        if (GameState.isRolling) { scheduleAI(300); return; }
 
         if (GameState.mode === "awaitRoll") {
             if (GameState.mustPass) {
@@ -1714,11 +1375,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
             const btn = document.getElementById("baralharDados");
-            if (btn && !btn.disabled) {
-                btn.click();
-            } else {
-                scheduleAI(300);
-            }
+            if (btn && !btn.disabled) { btn.click(); } else { scheduleAI(300); }
             return;
         }
 
@@ -1728,11 +1385,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!moves.length) {
                 const v = d;
                 if (GameState.dice.canRepeat) {
-                    setMsg(
-                        `Saiu ${v}.\n` +
-                        `Não é uma jogada válida.\n` +
-                        `Como saiu ${v}, a IA lança de novo o dado.`
-                    );
+                    setMsg(`Saiu ${v}.\nNão é uma jogada válida.\nComo saiu ${v}, a IA lança de novo o dado.`);
                     GameState.mode = "awaitRoll";
                     GameState.mustPass = true;
                     GameState.nextPlayer = GameState.currentPlayer;
@@ -1742,11 +1395,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     updateRollUI();
                     scheduleAI(AI_DELAY.ROLL);
                 } else {
-                    setMsg(
-                        `Saiu ${v}.\n` +
-                        `Não é uma jogada válida.\n` +
-                        `A IA passa a vez.`
-                    );
+                    setMsg(`Saiu ${v}.\nNão é uma jogada válida.\nA IA passa a vez.`);
                     GameState.mode = "awaitRoll";
                     GameState.mustPass = true;
                     GameState.nextPlayer = (GameState.currentPlayer === "Azul") ? "Vermelho" : "Azul";
@@ -1758,7 +1407,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
                 return;
             }
-
             const move = aiPickMove(moves, GameState.aiDifficulty);
             applyMove(move.from, move.to);
             if (checkWin()) return;
@@ -1768,18 +1416,15 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // Movimento das peças
     function walkStepsOwner(ownerChar, startR, startC, rem) {
         let curR = startR, curC = startC, steps = rem;
         while (steps > 0) {
             const d = dirForRow(curR);
             const canRight = (d === +1 && curC < GameState.cols - 1);
             const canLeft = (d === -1 && curC > 0);
-
             if ((d === +1 && canRight) || (d === -1 && canLeft)) {
                 curC += d; steps--; continue;
             }
-
             curR = (ownerChar === "A")
                 ? (curR === 3 ? 2 : curR === 2 ? 1 : curR === 1 ? 0 : 1)
                 : (curR === 0 ? 1 : curR === 1 ? 2 : curR === 2 ? 3 : 2);
@@ -1788,49 +1433,31 @@ document.addEventListener("DOMContentLoaded", () => {
         return { r: curR, c: curC };
     }
 
-    // Clicks no tabuleiro
-    // controla a seleção da peça pelo utilizador; escolhe a bifurcação e o destino final 
+    // Interação com o Tabuleiro (Clique)
     async function onCellClick(e) {
         const vr = parseInt(e.currentTarget.dataset.vr, 10);
         const vc = parseInt(e.currentTarget.dataset.vc, 10);
         const persp = getPerspectivePlayer();
         const { r, c } = fromView(vr, vc, persp);
-
         const cellIndex = rcToCellIndex(r, c);
 
         if (isAITurnNow()) return;
         if (GameState.mode === "finished") return;
 
-        // [script.js] Dentro de onCellClick / Bloco MODO ONLINE
-
-        // =====================================================
-        //                  MODO ONLINE
-        // =====================================================
-        // [script.js] Dentro de onCellClick / Bloco MODO ONLINE
-
+        // Interação Online
         if (OnlineState && OnlineState.game) {
-
-
             if (GameState.mustPass) {
-                setMsg("Não tens jogadas válidas. Clique em 'Passar a vez'.");
+                setMsg("Não tens jogadas válidas. Clica em 'Passar a vez'.");
                 return;
             }
-
             const step = GameState.onlineStep || "from";
             const isMine = isOwnPiece(r, c, cellIndex);
             
-            // 2) Validação do Passo
             if (step === "from") {
-                if (!isMine) {
-                    setMsg("Escolhe uma das tuas peças.");
-                    return;
-                }
+                if (!isMine) { setMsg("Escolhe uma das tuas peças."); return; }
             } 
             else if (step === "take") {
-                if (isMine) {
-                    setMsg("Tens de escolher a peça do adversário para capturar.");
-                    return;
-                }
+                if (isMine) { setMsg("Tens de escolher a peça do adversário para capturar."); return; }
                 if (GameState.serverSelected && !GameState.serverSelected.includes(cellIndex)) {
                      setMsg("Clica numa das peças destacadas para capturar.");
                      return;
@@ -1839,47 +1466,26 @@ document.addEventListener("DOMContentLoaded", () => {
             else if (step === "to") {
                  const isValidDest = GameState.serverSelected && GameState.serverSelected.includes(cellIndex);
                  if (!isValidDest) {
-                     // Se não é destino, só deixamos passar se for para cancelar (clique na própria peça)
-                     if (!isMine) {
-                         setMsg("Clica numa das casas destacadas para mover.");
-                         return;
-                     }
+                     if (!isMine) { setMsg("Clica numa das casas destacadas para mover."); return; }
                  }
             }
 
-            // 🟢 3) LIMPAR HIGHLIGHTS IMEDIATAMENTE (A tua sugestão)
-            // Isto remove a confusão visual enquanto esperamos pelo servidor.
             clearHighlights();
 
-            // 4) Enviar a jogada
             const canRepeatMove = GameState.dice && GameState.dice.canRepeat;
-
             try {
                 await notifyMove(cellIndex);
-
                 if (canRepeatMove) {
                     GameState.dice = { sum: null, value: null, canRepeat: false };
                     GameState.mode = "awaitRoll";
                     updateRollUI();
                 }
-
             } catch (err) {
                 let msg = err.message || "Erro ao mover peça.";
-
-                if (msg.includes("roll the stick dice first")){
-                     msg = "Tem de lançar os dados antes de mover.";
-                     GameState.mode = "awaitRoll";
-                     updateRollUI();
-                }
-                else if (msg.includes("Not your turn to play")) {
-                     msg = "Não é a sua vez.";
-                }
-                else if (msg.includes("No valid moves from here")) {
-                     msg = "Jogada inválida.";
-                }
-
+                if (msg.includes("roll the stick dice first")) { msg = "Tens de lançar os dados antes de mover."; GameState.mode = "awaitRoll"; updateRollUI(); }
+                else if (msg.includes("Not your turn to play")) { msg = "Não é a tua vez."; }
+                else if (msg.includes("No valid moves from here")) { msg = "Jogada inválida."; }
                 setMsg(msg);
-
                 if (GameState.dice && GameState.dice.value) {
                     highlightMoveablePieces();
                 }
@@ -1887,10 +1493,7 @@ document.addEventListener("DOMContentLoaded", () => {
             return; 
         }
 
-        // =========================
-        //      MODO LOCAL
-        // =========================
-
+        // Interação Local
         function fixBranchOptionsForOwner(ownerChar, options) {
             if (ownerChar === "A") return options;
             return options.map(o => {
@@ -1908,7 +1511,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 setMsg("Na 4.ª linha só mexe se a 1.ª da tua cor estiver vazia.");
                 return;
             }
-
             if (piece.stage === STAGE.NOT_MOVED && !isFrontOfStartRow(r, c)) {
                 setMsg("Na fila inicial só podes mexer a peça da frente (à direita).");
                 return;
@@ -1919,13 +1521,10 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             const dest = possibleAdvanceFrom(r, c, GameState.dice.value);
-
             if (dest.needsChoice) {
                 GameState.mode = "awaitDestination";
-
                 const fixedOpts = fixBranchOptionsForOwner(piece.owner, dest.options);
                 GameState.selected = { r, c, remaining: dest.remaining, options: fixedOpts };
-
                 const endsResolved = fixedOpts
                     .map(o => ({ end: walkStepsOwner(piece.owner, o.r, o.c, dest.remaining) }))
                     .filter(p => canLand(p.end.r, p.end.c));
@@ -1937,22 +1536,17 @@ document.addEventListener("DOMContentLoaded", () => {
                     highlightMoveablePieces();
                     return;
                 }
-
                 const endsView = endsResolved.map(p => toView(p.end.r, p.end.c, persp));
                 clearHighlights();
                 endsView.forEach(({ vr, vc }) => {
                     const el = cellElView(vr, vc);
                     if (el) el.classList.add("hl");
                 });
-
                 setMsg("Estás na 3.ª linha: escolhe o destino (4.ª ou 2.ª).");
                 return;
             }
 
-            if (dest.r == null || !canLand(dest.r, dest.c)) {
-                setMsg("Jogada inválida.");
-                return;
-            }
+            if (dest.r == null || !canLand(dest.r, dest.c)) { setMsg("Jogada inválida."); return; }
             applyMove({ r, c }, { r: dest.r, c: dest.c });
             if (checkWin()) return;
             GameState.selected = null;
@@ -1976,14 +1570,11 @@ document.addEventListener("DOMContentLoaded", () => {
             const piece = GameState.board[from.r][from.c];
             const ownerChar = piece?.owner || "A";
             const options = Array.isArray(from.options) ? from.options : [];
-
             const clickedModel = fromView(vr, vc, persp);
-
             const resolved = options.map(o => ({
                 entry: o,
                 end: walkStepsOwner(ownerChar, o.r, o.c, from.remaining)
             }));
-
             const picked = resolved.find(p => p.end.r === clickedModel.r && p.end.c === clickedModel.c);
 
             if (!picked) {
@@ -2002,7 +1593,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 endsView.forEach(({ vr, vc }) => cellElView(vr, vc)?.classList.add("hl"));
                 return;
             }
-
             applyMove({ r: from.r, c: from.c }, { r: end.r, c: end.c });
             if (checkWin()) return;
             GameState.selected = null;
@@ -2012,75 +1602,51 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-
+    // Sincronização com Servidor (SSE)
     function handleServerUpdate(state) {
-        if (!state || state.error) {
-            return;
-        }
+        if (!state || state.error) return;
 
-        // 🟢 1. DETETAR SE HOUVE MOVIMENTO REAL (BOARD CHANGED)
-        // Criamos uma "assinatura" do tabuleiro baseada APENAS na cor das peças.
-        // Ignoramos 'selected', 'inMotion', etc. Se a assinatura mudar, é porque uma peça mexeu.
         let boardChanged = false;
         
         if (Array.isArray(state.pieces)) {
             const getBoardSig = (pieces) => {
                 return JSON.stringify(pieces.map(p => {
-                    if (!p) return 0; // Casa vazia
-                    // Se for objeto {color: "Red", ...} devolve "Red". Se for numero 1, devolve 1.
+                    if (!p) return 0; 
                     return (typeof p === "object") ? p.color : p; 
                 }));
             };
-
             const currentSig = getBoardSig(state.pieces);
-            
-            // Se já tinhamos um estado anterior e é diferente do atual -> MOVIMENTO
-            if (GameState.lastBoardSig && GameState.lastBoardSig !== currentSig) {
-                boardChanged = true;
-            }
+            if (GameState.lastBoardSig && GameState.lastBoardSig !== currentSig) boardChanged = true;
             GameState.lastBoardSig = currentSig;
         }
 
-        // 2. DETETAR MUDANÇA DE TURNO
         const serverTurn = state.turn || (state.dice && state.dice.turn);
         let turnChanged = false;
-        if (GameState.lastTurnNick && serverTurn && GameState.lastTurnNick !== serverTurn) {
-            turnChanged = true;
-        }
+        if (GameState.lastTurnNick && serverTurn && GameState.lastTurnNick !== serverTurn) turnChanged = true;
         if (serverTurn) GameState.lastTurnNick = serverTurn;
 
-        // Atualizar isMyTurn
         if (serverTurn && OnlineState.nick) {
             GameState.isMyTurn = (serverTurn.trim().toLowerCase() === OnlineState.nick.trim().toLowerCase());
         }
 
-        // 🟢 3. LIMPEZA DE DADO (A CORREÇÃO ESTÁ AQUI)
-        // Se o turno mudou OU se as peças mudaram de sítio (jogada feita), 
-        // o dado antigo já não serve. APAGAR IMEDIATAMENTE.
         if (turnChanged || boardChanged) {
             GameState.dice = { sum: null, value: null, canRepeat: false };
-            GameState.mustPass = false; // <--- ADICIONA ESTA LINHA OBRIGATÓRIA
+            GameState.mustPass = false; 
             clearHighlights();
         }
 
-        // 4. Info Jogadores e Cores
         if (OnlineState.game && state.players) {
             GameState.onlinePlayers = state.players;
             const previousColor = GameState.myColor;
-            
             applyOnlineTurnInfoFromState(state);
             
-            // Fallback de segurança para isMyTurn baseado nas cores
             if (!GameState.isMyTurn && GameState.myColor && GameState.currentPlayer === GameState.myColor) {
                 GameState.isMyTurn = true;
             }
 
-            if (GameState.myColor && !previousColor) {
-                renderBoard();
-            }
+            if (GameState.myColor && !previousColor) renderBoard();
         }
 
-        // 5. Atualizar Peças (Visual)
         if (Array.isArray(state.pieces)) {
             GameState.serverPieces = state.pieces.slice();
             const rows = GameState.rows;
@@ -2106,16 +1672,12 @@ document.addEventListener("DOMContentLoaded", () => {
             renderBoard(); 
         }
 
-        // 6. Passo e Seleção
         GameState.onlineStep = (typeof state.step === "string") ? state.step : null;
         GameState.serverSelected = Array.isArray(state.selected) ? state.selected.slice() : null;
 
-        // 7. LÓGICA DO DADO (RECEBER NOVO OU MANTER)
         if (state.dice) {
-            // === SERVIDOR ENVIOU DADOS NOVOS ===
             const diceState = state.dice;
             if (diceState.stickValues) setDiceVisualFromStickValues(diceState.stickValues);
-
             const d = { sum: null, value: diceState.value, canRepeat: !!diceState.keepPlaying };
             GameState.dice = d;
             GameState.isRolling = false;
@@ -2136,78 +1698,52 @@ document.addEventListener("DOMContentLoaded", () => {
             if (iMustPass) {
                 GameState.mustPass = true;
                 GameState.mode = "awaitRoll";
-                const txt = d.canRepeat ? "Lança de novo." : "Clique em 'Passar a vez'.";
+                const txt = d.canRepeat ? "Lança de novo." : "Clica em 'Passar a vez'.";
                 setMsg(`Saiu ${d.value}.\nNão tens jogadas válidas.\n${txt}`);
             } else {
                 GameState.mustPass = false;
                 if (OnlineState.game && !GameState.isMyTurn) {
-                    // Se NÃO é a minha vez, apenas informo o valor, não calculo jogadas nem highlights
                     setMsg(`Oponente obteve ${d.value}.`);
                     clearHighlights();
                 } else {
-                    // Só calculo jogadas e mostro highlights se for a minha vez
                     applyRollResult(d); 
                 }
             }
             updateRollUI();
-        } 
-        // [script.js] Dentro de handleServerUpdate / Bloco else final
-        else {
-            // === UPDATE SEM DADOS (Início de Turno, Fim de Jogada, etc.) ===
-            
+        } else {
             if (GameState.onlineStep) {
-                // Estamos a meio de uma jogada (escolher peça ou destino)
                 GameState.mode = "awaitPiece";
             } 
             else if (!turnChanged) {
-                // Não há passo nem mudança de turno recente -> Estamos à espera de lançar
                 GameState.mode = "awaitRoll";
-                
-                // Limpeza de segurança
                 if (!GameState.dice?.value) {
                      GameState.dice = { sum: null, value: null, canRepeat: false };
                 }
-
-                // 🟢 CORREÇÃO: Atualizar mensagem para AMBOS os jogadores
                 if (GameState.isMyTurn) {
-                    // Se é a minha vez e não tenho dados, tenho de lançar
-                    setMsg("Clique em 'Lançar Dados'.");
+                    setMsg("Clica em 'Lançar Dados'.");
                 }
             }
             updateRollUI();
         }
 
-        // ... dentro de handleServerUpdate ...
-
         if ("winner" in state) {
             const winnerNick = state.winner;
-
-            // Limpar o estado do jogo imediatamente
             stopUpdateListener();
             OnlineState.game = null;
             GameState.inGame = false;
             GameState.mode = "finished";
 
-            // CASO 1: Jogo Cancelado (Timeout)
             if (winnerNick === null) {
                 setMsg("Tempo esgotado! O jogo foi cancelado.");
-            } 
-            // CASO 2: Alguém ganhou
-            else {
+            } else {
                 let winnerDisplay = winnerNick;
-                // (Lógica para mostrar nome bonito/cor mantém-se igual...)
                 const players = state.players || GameState.onlinePlayers;
                 if (players && players[winnerNick]) {
-                    // ... mapear cor ...
                     if (players[winnerNick] === "Blue") winnerDisplay = "Azul";
                     else if (players[winnerNick] === "Red") winnerDisplay = "Vermelho";
                 }
-                
                 setMsg(`Fim do jogo online!\n${winnerDisplay} ganhou!`, { force: true });
             }
-
-            // --- CORREÇÃO: REMOVIDO O leaveGame() ---
-            // O jogo já acabou no servidor, não precisamos de enviar nada.
             
             if (typeof clearHighlights === "function") clearHighlights();
             if (typeof updateRollUI === "function") updateRollUI();
@@ -2217,20 +1753,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 closeAllMenus();
                 toggleMsgPanel(false);
             }, 3000);
-
             return;
         }
 
         if (OnlineState.game && !state.winner && GameState.isMyTurn) {
             const step = GameState.onlineStep;
-
             if (step === "to" || step === "take") {
                 applyServerDestinationHighlights();
             } 
             else if (step === "from") {
-                // Reversão/Seleção:
-                // Graças ao boardChanged, se acabámos de mover a peça, o dado foi apagado e isto não corre.
-                // Se só clicámos para cancelar, o boardChanged é false, o dado existe, e isto corre!
                 if (GameState.dice && GameState.dice.value) {
                     highlightMoveablePieces();
                 } else {
@@ -2244,23 +1775,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function applyServerDestinationHighlights() {
         const sel = GameState.serverSelected;
-
-        // Se não há seleção ou se estamos na fase inicial ("from"), sai.
         if (!Array.isArray(sel) || sel.length === 0) return;
         if (GameState.onlineStep === "from") return;
-
-        // Limpa destaques locais
         clearHighlights();
-        
         const persp = getPerspectivePlayer();
-
         sel.forEach(cellIdx => {
             const { r, c } = cellIndexToRC(cellIdx);
-
-            // 🟢 Agora que isOwnPiece está corrigido, isto vai FILTRAR a origem (14)
-            // e deixar passar os destinos (16, etc.)
             if (isOwnPiece(r, c, cellIdx)) return; 
-
             const { vr, vc } = toView(r, c, persp);
             const el = cellElView(vr, vc);
             if (el) el.classList.add("hl");
