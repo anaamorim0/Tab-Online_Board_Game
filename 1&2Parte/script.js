@@ -33,21 +33,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const rankingSizeSelect = document.getElementById("rankingSizeSelect");
     const rankingSelectRow = document.getElementById("rankingSelectRow");
 
-        // Configurar o seletor visual
     const serverSelect = document.getElementById("serverSelect");
     
     if (serverSelect) {
-        serverSelect.value = window.SERVER_URL; // Lê da variável global
+        serverSelect.value = window.SERVER_URL;
 
         serverSelect.addEventListener("change", () => {
-            window.SERVER_URL = serverSelect.value; // Atualiza a variável global
+            if (typeof stopUpdateListener === "function") stopUpdateListener();
+            window.SERVER_URL = serverSelect.value;
             localStorage.setItem("tw_server_url", window.SERVER_URL);
-            
-            alert("Servidor alterado para: " + window.SERVER_URL);
-            // location.reload(); // Recomendado fazer reload
         });
     }
-
     
     const settingsIcon = settingsButton.querySelector("img");
     const loginIcon = userButton.querySelector("img");
@@ -345,7 +341,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 GameState.playerSurrendered = true; 
                 closeAllMenus();
                 toggleMsgPanel(true);
-                setMsg("A sair do jogo...");
                 await leaveGame();
             } catch (err) {
                 alert("Erro ao comunicar com o servidor: " + err.message);
@@ -569,7 +564,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const group = 9; 
 
             try {
-                const response = await fetch(`${SERVER_URL}/ranking`, {
+                const response = await fetch(`${window.SERVER_URL}/ranking`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ group: group, size: size })
