@@ -1,3 +1,5 @@
+window.SERVER_URL = localStorage.getItem("tw_server_url") || "http://twserver.alunos.dcc.fc.up.pt:8008";
+
 document.addEventListener("DOMContentLoaded", () => {
     const closedBox = document.getElementById("closedBox");
     const openWrap = document.getElementById("openWrap");
@@ -30,6 +32,22 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnRankingOnline = document.getElementById("btnRankingOnline");
     const rankingSizeSelect = document.getElementById("rankingSizeSelect");
     const rankingSelectRow = document.getElementById("rankingSelectRow");
+
+        // Configurar o seletor visual
+    const serverSelect = document.getElementById("serverSelect");
+    
+    if (serverSelect) {
+        serverSelect.value = window.SERVER_URL; // Lê da variável global
+
+        serverSelect.addEventListener("change", () => {
+            window.SERVER_URL = serverSelect.value; // Atualiza a variável global
+            localStorage.setItem("tw_server_url", window.SERVER_URL);
+            
+            alert("Servidor alterado para: " + window.SERVER_URL);
+            // location.reload(); // Recomendado fazer reload
+        });
+    }
+
     
     const settingsIcon = settingsButton.querySelector("img");
     const loginIcon = userButton.querySelector("img");

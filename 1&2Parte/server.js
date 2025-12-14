@@ -1,5 +1,3 @@
-//const SERVER_URL = "http://twserver.alunos.dcc.fc.up.pt:8008";
-const SERVER_URL = "http://localhost:8008"
 const GROUP_ID = 9;
 
 const OnlineState = window.OnlineState || (window.OnlineState = {
@@ -13,7 +11,7 @@ window.OnlineState = OnlineState;
 let updateSource = null;
 
 async function postJSON(endpoint, body) {
-    const response = await fetch(`${SERVER_URL}/${endpoint}`, {
+    const response = await fetch(`${window.SERVER_URL}/${endpoint}`, { 
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body)
@@ -111,7 +109,7 @@ function startUpdateListener() {
         nick: OnlineState.nick
     });
 
-    const url = `${SERVER_URL}/update?${params.toString()}`;
+    const url = `${window.SERVER_URL}/update?${params.toString()}`;
 
     updateSource = new EventSource(url);
 

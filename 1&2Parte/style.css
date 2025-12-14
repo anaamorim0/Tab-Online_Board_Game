@@ -277,10 +277,30 @@ html, body {
     overflow: auto;
 }
 
-.size-text {
+.server-text {
     color: #fff;
     font-size: 1rem;
     margin: 0 8px 3px;
+    text-align: center;
+}
+
+.server {
+    font-size: 0.95rem;
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: none;
+    background-color: #fff;
+    color: #230a07;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    width: 80%;
+    text-align: center;
+}
+
+.size-text {
+    color: #fff;
+    font-size: 1rem;
+    margin: 12px 8px 3px;
     text-align: center;
 }
 

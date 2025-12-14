@@ -4,7 +4,7 @@ const users = require('./users.js');
 const ranking = require('./ranking.js');
 const gameModule = require('./game.js');
 
-const PORT = 8008; 
+const PORT = 8109; 
 
 const headers = {
     'Access-Control-Allow-Origin': '*',
